@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Profile</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <h1>Your Profile</h1>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div style="color:green;">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Update Profile</button>
+  </form>
+
+  <h2>Your Itineraries</h2>
+  <ul>
+    {% for itinerary in itineraries %}
+      <li>{{ itinerary.start_date }} to {{ itinerary.end_date }} - Interests: {{ itinerary.interests }}</li>
+    {% empty %}
+      <li>No itineraries yet.</li>
+    {% endfor %}
+  </ul>
+
+  <a href="{% url 'core:index' %}">Back to Home</a>
+</body>
+</html>

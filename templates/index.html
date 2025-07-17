@@ -1,0 +1,759 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nepal AI Travel - Explore with AI</title>
+    <!-- Favicon for better branding and user experience -->
+    <link rel="icon" href="static/img/favicon.ico" type="image/x-icon">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom CSS (for hero gradient and any specific overrides) -->
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        /* Custom gradient for the hero section, as Tailwind's direct gradient classes might not match perfectly */
+          .hero-background {
+            background-image: url('media/uploads/mountains.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            z-index: 0;
+            min-height: 60vh; /* Adjust height as needed */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hero-background::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            /* Further reduced opacity of the gradient from 0.5 to 0.2 */
+            background-image: linear-gradient(to right, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); /* Overlay gradient */
+            z-index: -1;
+        }
+
+
+        /* Ensure consistent focus styles for accessibility - adjusted for darker theme */
+        .focus-ring-theme:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.5); /* gray-500 with opacity */
+        }
+        /* Custom styles for destination cards */
+        .destination-card-custom {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .destination-card-custom:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Larger shadow on hover */
+        }
+
+        /* Modal specific styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top of other content */
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem; /* Tailwind rounded-lg */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Tailwind shadow-lg */
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="font-sans antialiased bg-gray-50 text-gray-900">
+
+    <!-- Navigation Bar -->
+    <header class="bg-gray-900 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo and Site Title -->
+                <div class="flex items-center">
+                    <a href="{% url 'core:index' %}" class="flex-shrink-0 flex items-center">
+                        <img src="media/uploads/logo.png" alt="Nepal AI Travel Logo" class="h-8 w-8 rounded-full">
+                        <span class="ml-2 text-xl font-bold text-white">Nepal AI Travel</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden sm:ml-6 sm:flex sm:items-center space-x-6" aria-label="Main navigation">
+                    <a href="{% url 'core:planner' %}" class="text-gray-300 hover:text-white font-medium px-3 py-2 rounded-md transition duration-150 ease-in-out">Plan Trip</a>
+                    <a href="{% url 'core:destinations' %}" class="text-gray-300 hover:text-white font-medium px-3 py-2 rounded-md transition duration-150 ease-in-out">Destinations</a>
+                    <a href="{% url 'core:chatbot' %}" class="text-gray-300 hover:text-white font-medium px-3 py-2 rounded-md transition duration-150 ease-in-out">AI Assistant</a>
+
+                    <!-- Sign In link in main navbar, shown when logged out -->
+                    <span id="navbar-signin-link" class="hidden">
+                        <a href="#" id="desktop-signin-button" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 transition duration-150 ease-in-out">Sign In</a>
+                    </span>
+
+                    <!-- Profile Dropdown -->
+                    <div class="relative">
+                        <button id="profile-menu-button" type="button" class="flex items-center text-sm rounded-full focus:outline-none focus-ring-theme" aria-expanded="false" aria-haspopup="true" aria-controls="profile-dropdown">
+                            <span class="sr-only">Open user menu</span>
+                            <i class="fas fa-user-circle text-gray-300 hover:text-white text-3xl transition duration-150 ease-in-out" aria-hidden="true"></i>
+                        </button>
+                        <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-gray-800 ring-1 ring-black ring-opacity-5" role="menu" aria-orientation="vertical" aria-labelledby="profile-menu-button" tabindex="-1">
+                            <!-- Logged-in menu items (Dashboard, Profile, Sign out) -->
+                            <div id="logged-in-menu" class="hidden">
+                                <a href="{% url 'core:dashboard' %}" class="block px-4 py-2 text-gray-200 hover:bg-gray-700" role="menuitem" tabindex="-1">Dashboard</a>
+                                <a href="{% url 'core:profile' %}" class="block px-4 py-2 text-gray-200 hover:bg-gray-700" role="menuitem" tabindex="-1">Your Profile</a>
+                                <a href="#" id="sign-out-link" class="block px-4 py-2 text-gray-200 hover:bg-gray-700" role="menuitem" tabindex="-1">Sign out</a>
+                            </div>
+                            <!-- Logged-out menu items (REMOVED Register) -->
+                            <div id="logged-out-menu" class="hidden">
+                                <!-- Register link removed from here -->
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="sm:hidden flex items-center">
+                    <button id="mobile-menu-button" type="button" class="text-gray-300 hover:text-white focus:outline-none focus-ring-theme" aria-controls="mobile-menu" aria-expanded="false" aria-label="Open main menu">
+                        <i class="fas fa-bars text-xl" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Content -->
+        <nav id="mobile-menu" class="sm:hidden hidden bg-gray-900 shadow-lg" aria-label="Mobile navigation">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{% url 'core:planner' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Plan Trip</a>
+                <a href="{% url 'core:destinations' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Destinations</a>
+                <a href="{% url 'core:chatbot' %}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">AI Assistant</a>
+
+                <!-- Sign In link in mobile main navbar, shown when logged out -->
+                <span id="mobile-navbar-signin-link" class="block mt-2 px-3 py-2 text-base font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-md text-center hidden">
+                    <a href="#" id="mobile-signin-button" class="block w-full h-full">Sign In</a>
+                </span>
+
+                <!-- Mobile Profile Links -->
+                <div class="pt-4 border-t border-gray-700">
+                    <div id="mobile-logged-in-menu" class="hidden">
+                        <a href="{% url 'core:dashboard' %}" class="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Dashboard</a>
+                        <a href="{% url 'core:profile' %}" class="block px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Your Profile</a>
+                        <a href="#" id="mobile-sign-out-link" class="block w-full text-left px-3 py-2 mt-2 text-base font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-md">Sign out</a>
+                    </div>
+                    <!-- Mobile Logged-out menu items (REMOVED Register) -->
+                    <div id="logged-out-menu" class="hidden">
+                        <!-- Register link removed from here -->
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-background text-white py-20 sm:py-24 md:py-32">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
+                    Explore Nepal with AI
+                </h1>
+                <p class="text-lg sm:text-xl font-light mb-8 opacity-90">
+                    Your smart travel companion to discover the beauty and culture of Nepal
+                </p>
+                <a href="{% url 'core:planner' %}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-full shadow-lg text-white bg-gray-800 hover:bg-gray-700 transition duration-300 ease-in-out transform hover:scale-105 focus-ring-theme">
+                    Plan My Trip
+                </a>
+            </div>
+        </section>
+
+        <!-- Features Section: What We Offer -->
+        <section class="py-16 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-center mb-12">
+                    What We Offer
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <!-- Feature Card 1: Smart Itinerary -->
+                    <div class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center text-center transform hover:scale-105 transition duration-300 ease-in-out">
+                        <div class="text-gray-700 mb-6">
+                            <i class="fas fa-route text-5xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Smart Itinerary</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Get a personalized travel plan based on your interests, time, and budget.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 2: AI Travel Assistant -->
+                    <div class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center text-center transform hover:scale-105 transition duration-300 ease-in-out">
+                        <div class="text-gray-700 mb-6">
+                            <i class="fas fa-headset text-5xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">AI Travel Assistant</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Ask anything about Nepal: destinations, travel tips, food, and culture.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 3: Top Destinations -->
+                    <div class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center text-center transform hover:scale-105 transition duration-300 ease-in-out">
+                        <div class="text-gray-700 mb-6">
+                            <i class="fas fa-mountain text-5xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3">Top Destinations</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Explore hand-picked destinations from Himalayas to heritage cities.
+                        </p>
+                    </div >
+                </div>
+            </div>
+        </section>
+
+        <!-- New Destinations Section - Replaces "Ready to start your journey?" -->
+        <section id="destinations-section" class="py-16 bg-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 mb-12">
+                    Discover Amazing Destinations
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Destination Card: Kathmandu Valley -->
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden destination-card-custom">
+                        <img src="media/uploads/kathmandu.png" alt="Kathmandu Durbar Square with ancient temples and palace architecture" class="w-full h-56 object-cover">
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Kathmandu Valley</h3>
+                            <p class="text-gray-700 mb-4">
+                                A UNESCO World Heritage Site, rich in history, ancient temples, and vibrant cultural experiences. Explore bustling markets and serene stupas.
+                            </p>
+                            <a href="#" class="inline-flex items-center text-gray-700 hover:text-gray-900 font-semibold transition duration-150 ease-in-out">
+                                Learn More
+                                <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Destination Card: Pokhara -->
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden destination-card-custom">
+                        <img src="media/uploads/pokhara.png" alt="Pokhara's Fewa Lake with Annapurna mountain range in background" class="w-full h-56 object-cover">
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Pokhara</h3>
+                            <p class="text-gray-700 mb-4">
+                                The gateway to the Annapurna region, offering stunning lake views, paragliding, boating, and serene mountain vistas.
+                            </p>
+                            <a href="#" class="inline-flex items-center text-gray-700 hover:text-gray-900 font-semibold transition duration-150 ease-in-out">
+                                Learn More
+                                <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Destination Card: Chitwan National Park -->
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden destination-card-custom">
+                        <img src="media/uploads/chitwan.png" alt="Elephant safari in Chitwan National Park wildlife reserve" class="w-full h-56 object-cover">
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Chitwan National Park</h3>
+                            <p class="text-gray-700 mb-4">
+                                Experience thrilling jungle safaris to spot rhinos, tigers, and diverse wildlife in this lush UNESCO World Heritage site.
+                            </p>
+                            <a href="#" class="inline-flex items-center text-gray-700 hover:text-gray-900 font-semibold transition duration-150 ease-in-out">
+                                Learn More
+                                <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+               
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials -->
+        <section class="py-16 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-center mb-12">
+                    What Travelers Say
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <blockquote class="bg-gray-50 p-8 rounded-xl shadow-md testimonial-card transform hover:scale-105 transition duration-300 ease-in-out">
+                        <div class="flex items-center mb-4">
+                            <img src="media/uploads/girl.png" alt="Profile picture of Sarah Johnson, a woman in her 30s with curly brown hair smiling" class="w-14 h-14 rounded-full object-cover border-2 border-gray-500">
+                            <div class="ml-4">
+                                <p class="font-bold text-lg">Sarah Johnson</p>
+                                <p class="text-gray-600">Paris, France</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed italic">
+                            "The AI Travel Assistant saved me hours of research and planned the perfect romantic getaway for our anniversary! Highly recommended."
+                        </p>
+                    </blockquote>
+                    <blockquote class="bg-gray-50 p-8 rounded-xl shadow-md testimonial-card transform hover:scale-105 transition duration-300 ease-in-out">
+                        <div class="flex items-center mb-4">
+                            <img src="media/uploads/man.png" alt="Profile picture of Rajesh Shrestha, trekking guide in Nepal" class="w-14 h-14 rounded-full object-cover border-2 border-gray-500">
+                            <div class="ml-4">
+                                <p class="font-bold text-lg">Rajesh Shrestha</p>
+                                <p class="text-gray-600">Kathmandu, Nepal</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed italic">
+                            "This tool helped me plan the perfect Everest Base Camp trek itinerary and even connected me with local guides. A true game-changer!"
+                        </p>
+                    </blockquote>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Company</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">About Us</a></li>
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Careers</a></li>
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Press</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Resources</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Blog</a></li>
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Help Center</a></li>
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Guides</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Legal</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Privacy</a></li>
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Terms</a></li>
+                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Cookie Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Connect</h3>
+                    <div class="flex space-x-4 justify-center md:justify-start">
+    <!-- Twitter -->
+    <a href="https://www.twitter.com/YourTwitterUsername" target="_blank" 
+       class="text-gray-400 hover:text-gray-300 transition duration-150 ease-in-out" 
+       aria-label="Follow us on Twitter">
+        <i class="fab fa-twitter text-2xl"></i>
+    </a>
+
+    <!-- Instagram -->
+    <a href="https://www.instagram.com/YourInstagramUsername" target="_blank" 
+       class="text-gray-400 hover:text-gray-300 transition duration-150 ease-in-out" 
+       aria-label="Follow us on Instagram">
+        <i class="fab fa-instagram text-2xl"></i>
+    </a>
+
+    <!-- Facebook -->
+    <a href="https://www.facebook.com/YourFacebookPageOrProfile" target="_blank" 
+       class="text-gray-400 hover:text-gray-300 transition duration-150 ease-in-out" 
+       aria-label="Follow us on Facebook">
+        <i class="fab fa-facebook text-2xl"></i>
+    </a>
+
+    <!-- LinkedIn -->
+    <a href="https://www.linkedin.com/in/YourLinkedInUsername" target="_blank" 
+       class="hover:text-gray-300 transition duration-150 ease-in-out" 
+       aria-label="Connect with us on LinkedIn">
+        <i class="fab fa-linkedin text-2xl"></i>
+    </a>
+</div>
+                </div>
+            </div>
+            <div class="mt-12 pt-8 border-t border-gray-700 text-center text-gray-400">
+                <p>&copy; 2025 Nepal AI Travel. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Sign In Modal -->
+    <div id="signin-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="signin-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl focus:outline-none focus-ring-theme" aria-label="Close sign in form">
+                &times;
+            </button>
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-900">Access Your Account</h2>
+            <div id="signin-message" class="text-center mb-4 text-sm font-medium text-green-600 hidden"></div>
+            <form id="signin-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="email" name="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" name="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm" placeholder="••••••••">
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                            Remember me
+                        </label>
+                    </div>
+                    <div class="text-sm">
+                        <a href="#" class="font-medium text-gray-700 hover:text-gray-900">
+                            Forgot your password?
+                        </a>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <button type="submit" id="signin-submit-button" class="w-1/2 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Sign In
+                    </button>
+                    <!-- Changed type to button and added ID for new behavior -->
+                    <button type="button" id="register-open-button" class="w-1/2 flex justify-center py-2 px-4 border border-gray-800 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Register
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registration Modal (NEW) -->
+    <div id="registration-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="registration-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl focus:outline-none focus-ring-theme" aria-label="Close registration form">
+                &times;
+            </button>
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-900">Create Your Account</h2>
+            <div id="registration-message" class="text-center mb-4 text-sm font-medium text-green-600 hidden"></div>
+            <form id="registration-form" class="space-y-4">
+                <div>
+                    <label for="reg-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="reg-email" name="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label for="reg-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="reg-password" name="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm" placeholder="••••••••">
+                </div>
+                <div>
+                    <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" name="confirm-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm" placeholder="••••••••">
+                </div>
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Register Account
+                    </button>
+                </div>
+            </form>
+            <p class="mt-4 text-center text-sm text-gray-600">
+                Already have an account? 
+                <a href="#" id="back-to-signin-link" class="font-medium text-gray-700 hover:text-gray-900">
+                    Sign In
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <!-- JavaScript for menu toggling and login simulation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Helper function to show/hide elements
+            function show(element) {
+                if (element) element.classList.remove('hidden');
+            }
+
+            function hide(element) {
+                if (element) element.classList.add('hidden');
+            }
+
+            // Function to display messages in the modal
+            function displayModalMessage(modalMessageElement, message, isError = false) {
+                if (modalMessageElement) {
+                    modalMessageElement.textContent = message;
+                    modalMessageElement.classList.remove('hidden');
+                    if (isError) {
+                        modalMessageElement.classList.remove('text-green-600');
+                        modalMessageElement.classList.add('text-red-600');
+                    } else {
+                        modalMessageElement.classList.remove('text-red-600');
+                        modalMessageElement.classList.add('text-green-600');
+                    }
+                    setTimeout(() => {
+                        modalMessageElement.classList.add('hidden');
+                        modalMessageElement.textContent = '';
+                    }, 3000); // Hide message after 3 seconds
+                }
+            }
+
+            // Elements for desktop profile menu
+            const profileMenuButton = document.getElementById('profile-menu-button');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            const loggedInMenu = document.getElementById('logged-in-menu');
+            const loggedOutMenu = document.getElementById('logged-out-menu');
+            const signOutLink = document.getElementById('sign-out-link');
+
+            // Elements for mobile menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileLoggedInMenu = document.getElementById('mobile-logged-in-menu');
+            const mobileLoggedOutMenu = document.getElementById('mobile-logged-out-menu');
+            const mobileSignOutLink = document.getElementById('mobile-sign-out-link');
+
+            // Elements for conditional Sign In link in navbar
+            const navbarSignInLink = document.getElementById('navbar-signin-link');
+            const mobileNavbarSignInLink = document.getElementById('mobile-navbar-signin-link');
+
+            // Sign In Modal elements
+            const signinModal = document.getElementById('signin-modal');
+            const signinCloseButton = document.getElementById('signin-close-button');
+            const signinForm = document.getElementById('signin-form');
+            const desktopSigninButton = document.getElementById('desktop-signin-button');
+            const mobileSigninButton = document.getElementById('mobile-signin-button');
+            const registerOpenButton = document.getElementById('register-open-button'); // Button to open registration modal
+            const signinMessage = document.getElementById('signin-message'); // Message display for sign-in modal
+
+            // Registration Modal elements (NEW)
+            const registrationModal = document.getElementById('registration-modal');
+            const registrationCloseButton = document.getElementById('registration-close-button');
+            const registrationForm = document.getElementById('registration-form');
+            const backToSigninLink = document.getElementById('back-to-signin-link');
+            const registrationMessage = document.getElementById('registration-message'); // Message display for registration modal
+
+
+            // Function to update the profile menu and navbar Sign In link based on login status
+            function updateProfileMenuState() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+                // Desktop Profile Menu
+                if (loggedInMenu && loggedOutMenu) {
+                    if (isLoggedIn) {
+                        show(loggedInMenu);
+                        hide(loggedOutMenu); // Hide logged-out items from profile dropdown
+                    } else {
+                        hide(loggedInMenu);
+                        hide(loggedOutMenu); // Hide logged-out items (including Register)
+                    }
+                }
+
+                // Mobile Profile Menu
+                if (mobileLoggedInMenu && mobileLoggedOutMenu) {
+                    if (isLoggedIn) {
+                        show(mobileLoggedInMenu);
+                        hide(mobileLoggedOutMenu); // Hide logged-out items from mobile profile dropdown
+                    } else {
+                        hide(mobileLoggedInMenu);
+                        hide(mobileLoggedOutMenu); // Hide logged-out items (including Register)
+                    }
+                }
+
+                // Toggle visibility of Sign In link in main navbars
+                if (navbarSignInLink && mobileNavbarSignInLink) {
+                    if (isLoggedIn) {
+                        hide(navbarSignInLink);
+                        hide(mobileNavbarSignInLink);
+                    } else {
+                        show(navbarSignInLink);
+                        show(mobileNavbarSignInLink);
+                    }
+                }
+            }
+
+            // Initial menu state on page load
+            updateProfileMenuState();
+
+            // Toggle mobile menu
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true' || false;
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Toggle desktop profile dropdown menu
+            if (profileMenuButton && profileDropdown) {
+                profileMenuButton.addEventListener('click', function() {
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true' || false;
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    profileDropdown.classList.toggle('hidden');
+                });
+
+                // Close dropdown if clicked outside
+                document.addEventListener('click', function(event) {
+                    if (!profileMenuButton.contains(event.target) && !profileDropdown.contains(event.target)) {
+                        profileDropdown.classList.add('hidden');
+                        profileMenuButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                // Close dropdown on Escape key
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape' && !profileDropdown.classList.contains('hidden')) {
+                        profileDropdown.classList.add('hidden');
+                        profileMenuButton.setAttribute('aria-expanded', 'false');
+                        profileMenuButton.focus(); // Return focus to the button
+                    }
+                });
+            }
+
+            // Smooth scroll for internal links (like #destinations-section)
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    const href = this.getAttribute('href');
+                    // Prevent default and skip querySelector if href is just '#'
+                    if (href === '#') {
+                        e.preventDefault();
+                        return; 
+                    }
+
+                    e.preventDefault();
+
+                    document.querySelector(href).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+
+                    // Close mobile menu if open after clicking a link
+                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            });
+
+            // Sign Out functionality
+            if (signOutLink) {
+                signOutLink.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    localStorage.removeItem('isLoggedIn'); // Clear the login flag
+                    updateProfileMenuState(); // Update menu immediately
+                    displayModalMessage(signinMessage, 'You have signed out.', false); // Using signinMessage for general app messages
+                    // Optionally, redirect to login page or home page
+                    // window.location.href = 'index.html'; // Redirect to home after logout
+                });
+            }
+
+            // Mobile Sign Out functionality
+            if (mobileSignOutLink) {
+                mobileSignOutLink.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    localStorage.removeItem('isLoggedIn'); // Clear the login flag
+                    updateProfileMenuState(); // Update menu immediately
+                    // Close mobile menu after sign out for better UX
+                    if (mobileMenu) mobileMenu.classList.add('hidden');
+                    if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    displayModalMessage(signinMessage, 'You have signed out.', false); // Using signinMessage for general app messages
+                });
+            }
+
+            // MODAL LOGIC FOR SIGN IN
+            // Show sign-in modal when desktop Sign In button is clicked
+            if (desktopSigninButton) {
+                desktopSigninButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    show(signinModal);
+                });
+            }
+
+            // Show sign-in modal when mobile Sign In button is clicked
+            if (mobileSigninButton) {
+                mobileSigninButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    show(signinModal);
+                    // Also close mobile menu if it's open
+                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            // Hide sign-in modal when close button is clicked
+            if (signinCloseButton) {
+                signinCloseButton.addEventListener('click', function() {
+                    hide(signinModal);
+                });
+            }
+
+            // Hide sign-in modal if clicked outside the content
+            if (signinModal) {
+                signinModal.addEventListener('click', function(event) {
+                    if (event.target === signinModal) { // Only close if clicking on the overlay itself
+                        hide(signinModal);
+                    }
+                });
+            }
+
+            // Simulate sign-in on form submission
+            if (signinForm) {
+                signinForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // Prevent actual form submission
+                    // In a real app, you'd send credentials to a server here.
+                    // For now, simulate success:
+                    localStorage.setItem('isLoggedIn', 'true');
+                    displayModalMessage(signinMessage, 'Sign In Successful!', false);
+                    setTimeout(() => {
+                        hide(signinModal); // Hide the modal after message
+                        updateProfileMenuState(); // Update navbar and profile dropdown
+                    }, 1000); // Give time for message to be seen
+                });
+            }
+
+            // MODAL LOGIC FOR REGISTRATION (NEW)
+            // Open registration modal when "Register" button in Sign In modal is clicked
+            if (registerOpenButton) {
+                registerOpenButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    hide(signinModal); // Hide sign-in modal
+                    show(registrationModal); // Show registration modal
+                });
+            }
+
+            // Hide registration modal when close button is clicked
+            if (registrationCloseButton) {
+                registrationCloseButton.addEventListener('click', function() {
+                    hide(registrationModal);
+                });
+            }
+
+            // Hide registration modal if clicked outside the content
+            if (registrationModal) {
+                registrationModal.addEventListener('click', function(event) {
+                    if (event.target === registrationModal) { // Only close if clicking on the overlay itself
+                        hide(registrationModal);
+                    }
+                });
+            }
+
+            // Simulate registration on form submission
+            if (registrationForm) {
+                registrationForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // Prevent actual form submission
+                    // In a real app, you'd send registration data to a server here.
+                    // For now, simulate success:
+                    localStorage.setItem('isLoggedIn', 'true');
+                    displayModalMessage(registrationMessage, 'Registration Successful! You are now signed in.', false);
+                    setTimeout(() => {
+                        hide(registrationModal); // Hide the modal after message
+                        updateProfileMenuState(); // Update navbar and profile dropdown
+                    }, 1000); // Give time for message to be seen
+                });
+            }
+
+            // Back to Sign In link in Registration modal
+            if (backToSigninLink) {
+                backToSigninLink.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    hide(registrationModal); // Hide registration modal
+                    show(signinModal); // Show sign-in modal
+                });
+            }
+        });
+    </script>
+</body>
+</html>

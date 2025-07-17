@@ -1,0 +1,4 @@
+{%load static%}
+<h2 class="text-xl font-bold">Your Itinerary "{{ itinerary.title }}" was generated!</h2>
+<p>From {{ itinerary.start_date }} to {{ itinerary.end_date }}</p>
+<a href="{% url 'core:planner' %}" class="text-blue-600 underline">Back to Planner</a>

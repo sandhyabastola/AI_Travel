@@ -1,0 +1,16 @@
+{%load static%}
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <div>
+        <button type="submit"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus-ring-indigo">
+            Generate My Itinerary
+        </button>
+    </div>
+</form>
+{% if ai_suggestions %}
+    <h2>AI Suggestions</h2>
+    <pre>{{ ai_suggestions }}</pre>
+{% endif %}
