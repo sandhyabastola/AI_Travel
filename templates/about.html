@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Us - Nepal AI Travel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body class="bg-gray-50 text-gray-800">
+    <!-- Header -->
+    <header class="bg-gray-800 text-white p-6">
+      <h1 class="text-3xl font-bold text-center">About Nepal AI Travel</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto p-6 mt-8">
+      <section>
+        <h2 class="text-2xl font-semibold mb-4">Who We Are</h2>
+        <p class="mb-6">
+          Nepal AI Travel is an innovative company building AI-powered travel
+          experiences to explore the beauty of Nepal. Our mission is to bring
+          technology and travel together.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-semibold mb-4">Meet Our Team</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div
+            class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-100 transition duration-300 cursor-pointer"
+            onclick="showDetails('Pritika Rayamajhi', 'Founder & CEO')"
+          >
+            <img
+              src="{% static 'images/pritika.jpg' %}"
+              alt="Pritika"
+              class="mx-auto rounded-full mb-3"
+            />
+            <h3 class="text-lg font-bold">Pritika Rayamajhi</h3>
+            <p class="text-gray-600">Developer</p>
+          </div>
+          <div
+            class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-100 transition duration-300 cursor-pointer"
+            onclick="showDetails('Sandhya Bastola', 'CTO')"
+          >
+            <img
+              src="{% static 'images/sandhya.webp' %}"
+              alt="Sandhya"
+              class="mx-auto rounded-full mb-3"
+            />
+            <h3 class="text-lg font-bold">Sandhya Bastola</h3>
+            <p class="text-gray-600">Developer</p>
+            <p class="text-gray-600"></p>
+          </div>
+          <div
+            class="bg-white shadow rounded-lg p-4 text-center hover:bg-gray-100 transition duration-300 cursor-pointer"
+            onclick="showDetails('Anil Shrestha', 'Lead Developer')"
+          >
+            <img
+              src="{% static 'images/sarina.webp' %}"
+              alt="Sarina"
+              class="mx-auto rounded-full mb-3"
+            />
+            <h3 class="text-lg font-bold">Sarina Timalsina</h3>
+            <p class="text-gray-600">Developer</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left"
+        >
+          <div>
+            <h3 class="text-lg font-bold mb-4">Company</h3>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="{% url 'core:about' %}"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >About Us</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Careers</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Press</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold mb-4">Resources</h3>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Blog</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Help Center</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Guides</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold mb-4">Legal</h3>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Privacy</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Terms</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="hover:text-gray-300 transition duration-150 ease-in-out"
+                  >Cookie Policy</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold mb-4">Connect</h3>
+            <div class="flex space-x-4 justify-center md:justify-start">
+              <!-- Twitter -->
+              <a
+                href="https://www.twitter.com/YourTwitterUsername"
+                target="_blank"
+                class="text-gray-400 hover:text-gray-300 transition duration-150 ease-in-out"
+                aria-label="Follow us on Twitter"
+              >
+                <i class="fab fa-twitter text-2xl"></i>
+              </a>
+
+              <!-- Instagram -->
+              <a
+                href="https://www.instagram.com/YourInstagramUsername"
+                target="_blank"
+                class="text-gray-400 hover:text-gray-300 transition duration-150 ease-in-out"
+                aria-label="Follow us on Instagram"
+              >
+                <i class="fab fa-instagram text-2xl"></i>
+              </a>
+
+              <!-- Facebook -->
+              <a
+                href="https://www.facebook.com/YourFacebookPageOrProfile"
+                target="_blank"
+                class="text-gray-400 hover:text-gray-300 transition duration-150 ease-in-out"
+                aria-label="Follow us on Facebook"
+              >
+                <i class="fab fa-facebook text-2xl"></i>
+              </a>
+
+              <!-- LinkedIn -->
+              <a
+                href="https://www.linkedin.com/in/YourLinkedInUsername"
+                target="_blank"
+                class="hover:text-gray-300 transition duration-150 ease-in-out"
+                aria-label="Connect with us on LinkedIn"
+              >
+                <i class="fab fa-linkedin text-2xl"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mt-12 pt-8 border-t border-gray-700 text-center text-gray-400"
+        >
+          <p>&copy; 2025 Nepal AI Travel. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+      function showDetails(name, role) {
+        alert(name + " - " + role + "\nThank you for exploring our team!");
+      }
+    </script>
+  </body>
+</html>

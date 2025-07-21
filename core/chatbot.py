@@ -1,70 +1,80 @@
-import torch
-from transformers import BertTokenizer, BertForSequenceClassification
+import re
+from .weather import get_weather_data
+from transformers import pipeline
 
-# Load the model and tokenizer once when Django starts
-MODEL_PATH = "bert-base-uncased"  # Or path to your fine-tuned model
-tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
-model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
-# Set device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-model.eval()
-
-# Map label IDs to intent names
-id2label = {
-    0: "destination_info",
-    1: "greeting",
-    2: "hotel_search",
-    3: "itinerary",
-    4: "recommendation",
-    5: "route_search",
-    6: "transport",
-    7: "weather"
+INTENTS = {
+    "get_weather": "Ask about the weather",
+    "find_transport": "Ask for transport options",
+    "plan_trip": "Ask help with planning trip",
+    "greeting": "Say hello",
+    "farewell": "Say goodbye",
+    "unknown": "Something else"
 }
 
-# Responses mapped to intent
-responses = {
-    "greeting": "Hello! How can I help you with your travel plans in Nepal?",
-    "destination_info": "Sure! Which destination are you interested in?",
-    "hotel_search": "Let me find some hotels for you...",
-    "itinerary": "I can help you plan your itinerary. Where would you like to go?",
-    "recommendation": "I recommend visiting Pokhara and Lumbini for your first trip!",
-    "route_search": "Please tell me your start and end locations.",
-    "transport": "We support bus, flight, and private vehicle info.",
-    "weather": "Let me fetch the weather details for you."
-}
+def predict_intent(message):
+    labels = list(INTENTS.keys())
+    hypothesis_templates = [INTENTS[label] for label in labels]
+    result = classifier(message, hypothesis_templates)
+    best_index = result['scores'].index(max(result['scores']))
+    predicted_intent = labels[best_index]
+    return predicted_intent
 
 
-def predict_intent(text):
-    """Predict intent class for a given user input."""
-    if not isinstance(text, str):
-        raise ValueError("Input must be a string")
-    
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-    inputs = {key: val.to(device) for key, val in inputs.items()}
+def extract_location(message):
+    known_locations = ["kathmandu", "pokhara", "biratnagar", "chitwan", "butwal", "dharan", "lalitpur"]
+    for loc in known_locations:
+        if loc in message.lower():
+            return loc.capitalize()
+    return None
 
-    with torch.no_grad():
-        outputs = model(**inputs)
-        logits = outputs.logits
-        predicted = torch.argmax(logits, dim=1).item()
-        # Calculate softmax confidence
-        probs = torch.softmax(logits, dim=1)
-        confidence = probs[0, predicted].item()
 
-    return id2label.get(predicted, "unknown"), confidence
-
+def extract_time_reference(message):
+    if "tomorrow" in message.lower():
+        return "tomorrow"
+    return "today"
 
 def chatbot(message):
-    """Main chatbot response function."""
-    if not isinstance(message, str):
-        raise ValueError("Expected string input")
-    
-    intent, confidence = predict_intent(message)
-    response = responses.get(intent, "Sorry, I didn’t understand that. Could you rephrase?")
+    intent = predict_intent(message)
 
-    return {
-        "response": response,
-        "intent": intent,
-        "confidence": confidence
-    }
+    if intent == "get_weather":
+        location = extract_location(message)
+        when = extract_time_reference(message)
+
+        if not location:
+            return "Please tell me the city you'd like the weather for."
+
+        weather_data = get_weather_data(location)
+
+        if "error" in weather_data:
+            return f"Sorry, I couldn't fetch weather info for {location}."
+
+        forecast = weather_data.get("forecast", [])
+        if not forecast:
+            return f"No forecast available for {location}."
+
+        forecast_entry = forecast[3] if when == "tomorrow" and len(forecast) > 3 else forecast[0]
+
+        return f"{when.capitalize()} in {location}: {forecast_entry['description']}, {forecast_entry['temp']}°C at {forecast_entry['datetime'].split()[1]}."
+
+    elif intent == "find_transport":
+        location = extract_location(message)
+        if not location:
+            return "Tell me your starting point and destination, like: 'from Kathmandu to Pokhara'."
+        return f"To travel to {location}, you can take a tourist bus, domestic flight, or private vehicle. Let me know your starting point to give more details."
+
+    elif intent == "plan_trip":
+        location = extract_location(message)
+        if not location:
+            return "Where would you like to plan your trip to?"
+        return f"Planning a trip to {location}? I recommend visiting key attractions, booking a hotel in advance, and checking the weather forecast. Want help building a full itinerary?"
+
+    elif intent == "greeting":
+        return "Hi there! I’m your AI Travel Assistant. How can I help with your trip?"
+
+    elif intent == "farewell":
+        return "Goodbye! Have a great journey. 😊"
+
+    else:
+        return "I'm not sure how to help with that yet, but I'm learning. Try asking about weather, transport, or trip planning."

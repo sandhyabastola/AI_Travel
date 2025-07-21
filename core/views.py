@@ -23,12 +23,15 @@ def index(request):
 def dashboard(request):
     return render(request, 'dashboard.html')
 
+def about(request):
+     return render(request, 'about.html')
+
 
 def destinations(request):
     destinations = Destination.objects.all()
     categories = Destination.objects.values_list('category', flat=True).distinct()
-
     category_filter = request.GET.get('category')
+
     if category_filter:
         destinations = destinations.filter(category=category_filter)
 
@@ -42,14 +45,13 @@ def destinations(request):
 @login_required
 def planner(request):
     if request.method == 'POST':
-        form = ItineraryForm(request.POST)
+        form = UserItineraryForm(request.POST)
         if form.is_valid():
             itinerary = form.save(commit=False)
             itinerary.user = request.user
             itinerary.save()
             form.save_m2m()
 
-            # Generate AI-powered itinerary suggestions
             ai_itinerary = generate_itinerary(itinerary)
 
             return render(request, 'planner_result.html', {
@@ -57,7 +59,7 @@ def planner(request):
                 'ai_suggestions': ai_itinerary
             })
     else:
-        form = ItineraryForm()
+        form = UserItineraryForm()
 
     return render(request, 'planner.html', {'form': form})
 
@@ -76,19 +78,16 @@ def chat_api(request):
                 raise ValueError("Expected string input")
 
             session_id = str(uuid.uuid4())
-
-            # Predict intent and get chatbot response
             intent = predict_intent(message)
             bot_reply = chatbot(message)
 
-            # Save chat history (if user is authenticated)
             ChatHistory.objects.create(
                 user=request.user if request.user.is_authenticated else None,
                 session_id=session_id,
                 user_message=message,
                 bot_response=bot_reply,
                 intent=intent,
-                confidence=1.0  # Placeholder confidence
+                confidence=1.0
             )
 
             return JsonResponse({
@@ -102,15 +101,16 @@ def chat_api(request):
 
     return JsonResponse({"error": "POST request required"}, status=400)
 
+
 @login_required
-def generate_itinerary(request):
+def user_itinerary_view(request):
     if request.method == 'POST':
         form = UserItineraryForm(request.POST)
         if form.is_valid():
             itinerary = form.save(commit=False)
             itinerary.user = request.user
             itinerary.save()
-            form.save_m2m()  # Save the many-to-many destinations
+            form.save_m2m()
             return render(request, 'itinerary_success.html', {'itinerary': itinerary})
     else:
         form = UserItineraryForm()
@@ -197,3 +197,5 @@ def transport_api(request, from_id, to_id):
         return JsonResponse({'options': options})
     except Destination.DoesNotExist:
         return JsonResponse({'error': 'Destination not found'}, status=404)
+    
+  
