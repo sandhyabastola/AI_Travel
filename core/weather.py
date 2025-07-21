@@ -1,43 +1,35 @@
 import requests
 from django.conf import settings
-import json
 
-def get_weather_data(location):
-    """
-    Get weather data for a specific location in Nepal
-    """
+def get_weather_data(city_name):
+    api_key = settings.OPENWEATHER_API_KEY
+    url = "https://api.openweathermap.org/data/2.5/forecast"
+
+    params = {
+        "q": city_name,
+        "appid": api_key,
+        "units": "metric"
+    }
+
     try:
-        # OpenWeatherMap API
-        api_key = settings.WEATHER_API_KEY
-        base_url = "http://api.openweathermap.org/data/2.5/weather"
-        
-        params = {
-            'q': f"{location},Nepal",
-            'appid': api_key,
-            'units': 'metric'
-        }
-        
-        response = requests.get(base_url, params=params)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                'location': location,
-                'temperature': data['main']['temp'],
-                'feels_like': data['main']['feels_like'],
-                'humidity': data['main']['humidity'],
-                'description': data['weather'][0]['description'],
-                'icon': data['weather'][0]['icon'],
-                'wind_speed': data['wind']['speed']
-            }
-        else:
-            return {
-                'error': f'Weather data not available for {location}',
-                'location': location
-            }
-    
-    except Exception as e:
+        response = requests.get(url, params=params)
+        data = response.json()
+
+        if data.get("cod") != "200":
+            return {"error": data.get("message", "City not found")}
+
+        forecast_data = []
+        for entry in data["list"][:5]:  # Get next 5 entries (next ~15 hours)
+            forecast_data.append({
+                "datetime": entry["dt_txt"],
+                "description": entry["weather"][0]["description"],
+                "temp": f"{entry['main']['temp']}°C"
+            })
+
         return {
-            'error': f'Error fetching weather data: {str(e)}',
-            'location': location
+            "city": city_name,
+            "forecast": forecast_data
         }
+
+    except Exception as e:
+        return {"error": str(e)}

@@ -44,7 +44,7 @@
                         <strong>District:</strong> {{ destination.district }}<br>
                         <strong>Description:</strong> {{ destination.description|truncatechars:100 }}
                     </p>
-                    <a href="{% url 'destination_detail' destination.id %}" class="btn btn-outline-primary btn-sm">View More</a>
+                    <a href="{% url 'core:destinations'%}" class="btn btn-outline-primary btn-sm">View More</a>
                 </div>
             </div>
         </div>

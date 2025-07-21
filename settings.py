@@ -14,10 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
-from decouple import config
-
-OPENWEATHER_API_KEY = config("OPENWEATHER_API_KEY")
-
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
