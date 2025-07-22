@@ -32,6 +32,32 @@ def terms(request):
     return render(request, 'terms.html')
 def cookie_policy(request):
     return render(request, 'cookie_policy.html')
+ 
+def contactus(request):
+    if request.method == 'POST':
+        # Handle contact form submission
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+        
+        # Here you would typically save the message to the database or send an email
+        
+        messages.success(request, 'Thank you for contacting us!')
+        return redirect('core:contactus')
+
+    return render(request, 'contactus.html')
+
+
+def blog(request):
+    # Placeholder for blog functionality
+    return render(request, 'blog.html')
+
+def help_center(request):
+    # Placeholder for help center functionality
+    return render(request, 'help_center.html') 
+def guides(request):
+    # Placeholder for guides functionality
+    return render(request, 'guides.html')
 
 
 def destinations(request):

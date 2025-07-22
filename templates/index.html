@@ -322,15 +322,16 @@
                     <h3 class="text-lg font-bold mb-4">Company</h3>
                     <ul class="space-y-2">
                         <li><a href="{% url 'core:about' %}" class="hover:text-gray-300 transition duration-150 ease-in-out">About Us</a></li>
+                        <li><a href="{% url 'core:contactus' %}" class="hover:text-gray-300 transition duration-150 ease-in-out">Contact Us</a></li>
                         
                     </ul>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4">Resources</h3>
                     <ul class="space-y-2">
-                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Blog</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Help Center</a></li>
-                        <li><a href="#" class="hover:text-gray-300 transition duration-150 ease-in-out">Guides</a></li>
+                        <li><a href="{% url 'core:blog' %}" class="hover:text-gray-300 transition duration-150 ease-in-out">Blog</a></li>
+                        <li><a href="{% url 'core:help_center' %}" class="hover:text-gray-300 transition duration-150 ease-in-out">Help Center</a></li>
+                        <li><a href="{% url 'core:guides' %}" class="hover:text-gray-300 transition duration-150 ease-in-out">Guides</a></li>
                     </ul>
                 </div>
                 <div>
