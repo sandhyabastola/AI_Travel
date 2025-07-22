@@ -18,4 +18,7 @@ urlpatterns = [
     path('weather/<str:location>/', views.weather_api, name='weather_api'),
     path('transport/<int:from_id>/<int:to_id>/', views.transport_api, name='transport_api'),
     path('about/', views.about, name='about'),
+    path('privacy/', views.privacy, name='privacy'),
+    path('terms/', views.terms, name='terms'),
+    path('cookie-policy/', views.cookie_policy, name='cookie_policy'),
 ]
