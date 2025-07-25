@@ -27,8 +27,31 @@
     </div>
 </header>
 
+<!-- Search Form -->
+<!-- Search + Filter Form -->
+<div class="container mb-4">
+    <form method="get" action="{% url 'core:destinations' %}">
+        <div class="row justify-content-center">
+            <div class="col-md-4 mb-2">
+                <input type="text" name="q" class="form-control" placeholder="Search destinations..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-3 mb-2">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <button class="btn btn-primary w-100" type="submit">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+
 <!-- Destination Cards -->
-<div class="container mt-4 mb-5">
+<div class="container mb-5">
     <div class="row">
         {% for destination in destinations %}
         <div class="col-md-4 mb-4">
@@ -41,12 +64,15 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ destination.name }}</h5>
                     <p class="card-text">
-                        <strong>District:</strong> {{ destination.district }}<br>
                         <strong>Description:</strong> {{ destination.description|truncatechars:100 }}
                     </p>
-                    <a href="{% url 'core:destinations'%}" class="btn btn-outline-primary btn-sm">View More</a>
+                    <a href="{% url 'core:destinations' %}" class="btn btn-outline-primary btn-sm">View More</a>
                 </div>
             </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-center text-muted">No destinations found.</p>
         </div>
         {% endfor %}
     </div>

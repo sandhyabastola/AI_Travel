@@ -7,6 +7,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import uuid
+from django.db.models import Q
+
 
 from .models import Destination, UserItinerary, ChatHistory, UserProfile, Transportation
 from .forms import UserItineraryForm, UserRegistrationForm, UserProfileForm
@@ -33,7 +35,7 @@ def terms(request):
 def cookie_policy(request):
     return render(request, 'cookie_policy.html')
  
-def contactus(request):
+def contacts(request):
     if request.method == 'POST':
         # Handle contact form submission
         name = request.POST.get('name')
@@ -43,9 +45,9 @@ def contactus(request):
         # Here you would typically save the message to the database or send an email
         
         messages.success(request, 'Thank you for contacting us!')
-        return redirect('core:contactus')
+        return redirect('core:contacts')
 
-    return render(request, 'contactus.html')
+    return render(request, 'contacts.html')
 
 
 def blog(request):
@@ -63,7 +65,16 @@ def guides(request):
 def destinations(request):
     destinations = Destination.objects.all()
     categories = Destination.objects.values_list('category', flat=True).distinct()
+
+    query = request.GET.get('q')
     category_filter = request.GET.get('category')
+
+    if query:
+        destinations = destinations.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query) 
+            
+        )
 
     if category_filter:
         destinations = destinations.filter(category=category_filter)
@@ -71,8 +82,10 @@ def destinations(request):
     return render(request, 'destinations.html', {
         'destinations': destinations,
         'categories': categories,
-        'selected_category': category_filter
+        'selected_category': category_filter,
+        'search_query': query,
     })
+
 
 
 @login_required
