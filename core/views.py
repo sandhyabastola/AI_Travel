@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -7,15 +8,24 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import uuid
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 
+from core.chatbot import get_chatbot_response, predict_intent_bert  # adjust import if needed
+from core.models import ChatHistory  # if using chat history model
 
-from .models import Destination, UserItinerary, ChatHistory, UserProfile, Transportation
-from .forms import UserItineraryForm, UserRegistrationForm, UserProfileForm
-from .itinerary import generate_itinerary
-from .weather import get_weather_data
-from .chatbot import predict_intent, chatbot
+from core.models import Destination, UserItinerary, ChatHistory, UserProfile, Transportation, Hotel
+from core.forms import UserItineraryForm, UserRegistrationForm, UserProfileForm
+from core.itinerary import generate_itinerary
+from core.weather import get_weather_data
+from .models import UserItinerary  # adjust import if needed
 
+from django.http import JsonResponse
+
+context = {
+  
+    'generation_date': timezone.now().date(),  
+}
 
 def index(request):
     featured_destinations = Destination.objects.filter(category__in=['city', 'mountain'])[:6]
@@ -61,6 +71,72 @@ def guides(request):
     # Placeholder for guides functionality
     return render(request, 'guides.html')
 
+def smart_itinerary(request):
+    try:
+        itinerary = UserItinerary.objects.get(user=request.user)
+        destinations = itinerary.destinations.all()
+        travel_dates = f"{itinerary.start_date} – {itinerary.end_date}"
+    except UserItinerary.DoesNotExist:
+        itinerary = None
+        destinations = []
+        travel_dates = "Not available"
+
+    context = {
+        'itinerary': itinerary,
+        'destinations': destinations,
+        'travel_dates': travel_dates,
+        'generation_date': timezone.now().date(),
+    }
+
+    return render(request, 'smart_itinerary.html', context)
+
+
+
+def edit_itinerary(request, itinerary_id):
+    try:
+        itinerary = UserItinerary.objects.get(id=itinerary_id, user=request.user)
+    except UserItinerary.DoesNotExist:
+        messages.error(request, 'Itinerary not found.')
+        return redirect('core:dashboard')
+
+    if request.method == 'POST':
+        form = UserItineraryForm(request.POST, instance=itinerary)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Itinerary updated successfully!')
+            return redirect('core:dashboard')
+    else:
+        form = UserItineraryForm(instance=itinerary)
+
+    return render(request, 'edit_itinerary.html', {'form': form, 'itinerary': itinerary})
+
+def download_itinerary_pdf(request, itinerary_id):
+    try:
+        itinerary = UserItinerary.objects.get(id=itinerary_id, user=request.user)
+    except UserItinerary.DoesNotExist:
+        messages.error(request, 'Itinerary not found.')
+        return redirect('core:dashboard')
+
+    # Generate PDF logic here (not implemented in this snippet)
+    # For example, you could use a library like ReportLab or WeasyPrint
+
+    messages.success(request, 'PDF downloaded successfully!')
+    return redirect('core:dashboard')
+
+def hotel_list(request):
+    query = request.GET.get('q')
+    if query:
+        hotels = Hotel.objects.filter(
+            Q(name__icontains=query) | Q(location__icontains=query)
+        )
+    else:
+        hotels = Hotel.objects.all()
+    return render(request, 'hotels/hotel_list.html', {'hotels': hotels})
+
+# Hotel detail view
+def hotel_detail(request, hotel_id):
+    hotel = get_object_or_404(Hotel, id=hotel_id)
+    return render(request, 'hotels/hotel_detail.html', {'hotel': hotel})
 
 def destinations(request):
     destinations = Destination.objects.all()
@@ -109,10 +185,35 @@ def planner(request):
 
     return render(request, 'planner.html', {'form': form})
 
-
-def chatbot_view(request):
+# ✅ Renders chatbot UI page
+def chatbot_page(request):
     return render(request, 'chatbot.html')
 
+
+# ✅ Handles chatbot AJAX POST request
+@csrf_exempt
+def chatbot_api(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            user_message = data.get('message', '')
+
+            if not user_message:
+                return JsonResponse({'error': 'Empty message'}, status=400)
+
+            bot_response = get_chatbot_response(user_message)
+            intent = predict_intent_bert(user_message)
+
+            return JsonResponse({
+                'response': bot_response,
+                'intent': intent,
+                'confidence': 1.0
+            })
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'POST request required'}, status=405)
 
 @csrf_exempt
 def chat_api(request):
@@ -121,18 +222,18 @@ def chat_api(request):
             data = json.loads(request.body)
             message = data.get("message", "")
             if not isinstance(message, str):
-                raise ValueError("Expected string input")
+                return JsonResponse({'error': 'Invalid message'}, status=400)
 
             session_id = str(uuid.uuid4())
-            intent = predict_intent(message)
-            bot_reply = chatbot(message)
+            intent = predict_intent_bert(message)
+            bot_reply = get_chatbot_response(message)
 
             ChatHistory.objects.create(
                 user=request.user if request.user.is_authenticated else None,
                 session_id=session_id,
                 user_message=message,
                 bot_response=bot_reply,
-                intent=intent,
+                intent=predict_intent_bert,
                 confidence=1.0
             )
 
@@ -142,10 +243,12 @@ def chat_api(request):
                 'confidence': 1.0,
                 'session_id': session_id
             })
+
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({"error": "POST request required"}, status=400)
+
 
 
 @login_required
@@ -160,21 +263,21 @@ def user_itinerary_view(request):
             return render(request, 'itinerary_success.html', {'itinerary': itinerary})
     else:
         form = UserItineraryForm()
-    return render(request, 'generate_itinerary.html', {'form': form})
+    return render(request, 'smart_itinerary.html', {'form': form})
 
 
 def login_view(request):
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user:
             login(request, user)
-            return redirect('core:index')
+            messages.success(request, "Login successfully")
+            return redirect('core:index')  # Replace with your home/dashboard
         else:
-            messages.error(request, 'Invalid username or password.')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+            messages.error(request, "Invalid username or password")
+    return render(request, 'login.html')
 
 
 def register_view(request):
@@ -217,6 +320,22 @@ def profile(request):
         'itineraries': user_itineraries
     })
 
+def edit_profile(request):
+    try:
+        profile = request.user.userprofile
+    except UserProfile.DoesNotExist:
+        profile = UserProfile.objects.create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('core:profile')
+    else:
+        form = UserProfileForm(instance=profile)
+
+    return render(request, 'edit_profile.html', {'form': form})
 
 def weather_api(request, location):
     weather_data = get_weather_data(location)

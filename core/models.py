@@ -20,17 +20,13 @@ class Destination(models.Model):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(blank=True)
-    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
-    location = models.CharField(max_length=100, blank=True)
-    date_of_birth = models.DateField(null=True, blank=True)
-    interests = models.CharField(max_length=200, blank=True)
-    
+   user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
+   bio = models.TextField(blank=True)
+   location = models.CharField(max_length=100, blank=True)
+   avatar = models.ImageField(upload_to='avatars/', null=True, blank=True) 
 
-    def __str__(self):
-        return self.user.username
-
+def __str__(self):
+        return f"{self.user.username}'s profile"
 
 class UserItinerary(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -78,13 +74,15 @@ class Transportation(models.Model):
     
 class Hotel(models.Model):
     name = models.CharField(max_length=200)
-    destination = models.ForeignKey('Destination', on_delete=models.CASCADE, related_name='hotels')
+    location = models.ForeignKey('Destination', on_delete=models.CASCADE, related_name='hotels')
     address = models.TextField(blank=True, null=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)  # e.g. 4.5
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     contact_number = models.CharField(max_length=50, blank=True, null=True)
+    image = models.ImageField(upload_to='hotels/', blank=True, null=True)
+    amenities = models.TextField(blank=True, null=True)  # e.g. Wi-Fi
     website = models.URLField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} - {self.destination.name}"
+        return f"{self.name} - {self.location}"
