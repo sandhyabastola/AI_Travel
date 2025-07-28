@@ -1,127 +1,43 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Your Profile</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-  <style>
-    /* Reset some default browser styling */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f9f9f9;
-  color: #333;
-  padding: 30px;
-  line-height: 1.6;
-}
-
-h1, h2 {
-  color: #2c3e50;
-  margin-bottom: 20px;
-}
-
-form {
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-  margin-bottom: 30px;
-  max-width: 500px;
-}
-
-form p {
-  margin-bottom: 15px;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="password"],
-textarea,
-select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 6px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-button[type="submit"] {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-button[type="submit"]:hover {
-  background-color: #2980b9;
-}
-
-ul {
-  list-style-type: disc;
-  margin-left: 20px;
-}
-
-ul li {
-  margin-bottom: 10px;
-}
-
-a {
-  display: inline-block;
-  margin-top: 20px;
-  color: #2980b9;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-div[style*="color:green"] {
-  margin-bottom: 20px;
-  background-color: #e7f9ed;
-  padding: 10px 15px;
-  border-left: 4px solid #2ecc71;
-  border-radius: 6px;
-}
-
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 </head>
-<body>
-  <h1>Your Profile</h1>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-10">
 
-  {% if messages %}
-    {% for message in messages %}
-      <div style="color:green;">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
+  <div class="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+    <div class="flex flex-col items-center">
+      <!-- Profile Image -->
+      <div class="mb-4">
+        <img src="{{ user.userprofile.avatar.url }}" alt="Profile Picture" class="w-24 h-24 rounded-full shadow-md">
+      </div>
 
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Update Profile</button>
-  </form>
+      <!-- Username -->
+      <h2 class="text-2xl font-semibold text-gray-800">{{ user.username }}</h2>
+      <p class="text-gray-500">{{ user.email }}</p>
 
-  <h2>Your Itineraries</h2>
-  <ul>
-    {% for itinerary in itineraries %}
-      <li>{{ itinerary.start_date }} to {{ itinerary.end_date }} - Interests: {{ itinerary.interests }}</li>
-    {% empty %}
-      <li>No itineraries yet.</li>
-    {% endfor %}
-  </ul>
+      <!-- Divider -->
+      <div class="w-full border-t mt-6 pt-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">About</h3>
+        <p class="text-gray-600 text-sm">
+          {% if user.userprofile.bio %}
+            {{ user.userprofile.bio }}
+          {% else %}
+            No bio provided. Update your profile.
+          {% endif %}
+        </p>
+      </div>
 
-  <a href="{% url 'core:index' %}">Back to Home</a>
+      <!-- Actions -->
+      <div class="mt-6 w-full">
+        <a href="{% url 'core:edit_profile' %}" class="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Edit Profile</a>
+        <a href="{% url 'core:logout' %}" class="mt-3 block w-full text-center bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition">Log Out</a>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
