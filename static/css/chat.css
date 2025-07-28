@@ -1,0 +1,115 @@
+/* Reset + base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background-color: #343541;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Chat container */
+.chat-wrapper {
+  width: 100%;
+  max-width: 600px;
+  height: 90vh;
+  background-color: #444654;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.chat-header {
+  background-color: #202123;
+  padding: 15px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #ffffff;
+  border-bottom: 1px solid #3f3f46;
+}
+
+/* Chat box (messages) */
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  scroll-behavior: smooth;
+}
+
+/* Individual messages */
+.chat-message {
+  max-width: 80%;
+  padding: 12px 18px;
+  border-radius: 18px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  background-color: #10a37f;
+  color: #fff;
+}
+
+.chat-message.bot {
+  align-self: flex-start;
+  background-color: #3e3f4b;
+  color: #e3e3e3;
+}
+
+/* Input area */
+.chat-input-area {
+  display: flex;
+  padding: 10px 15px;
+  background-color: #343541;
+  border-top: 1px solid #3f3f46;
+}
+
+.chat-input-area input {
+  flex: 1;
+  background-color: #40414f;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 1rem;
+  outline: none;
+}
+
+.chat-input-area button {
+  margin-left: 10px;
+  background-color: #10a37f;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.chat-input-area button:hover {
+  background-color: #0e8c6c;
+}
+
+/* Scrollbar styling */
+.chat-box::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-box::-webkit-scrollbar-thumb {
+  background-color: #5b5b5b;
+  border-radius: 4px;
+}
