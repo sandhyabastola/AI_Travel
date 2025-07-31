@@ -1,129 +1,132 @@
 {% load static %}
-<!-- plan_trip.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Plan Your Trip - AI Travel Assistant</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="{% static 'css/form.css' %}">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <title>Travel Planner</title>
     <style>
-        /* Custom focus ring */
-        .focus-ring-indigo:focus {
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #e0f7fa, #ffffff);
+            margin: 0;
+            padding: 0;
+        }
+
+        .planner-container {
+            max-width: 550px;
+            margin: 60px auto;
+            background: white;
+            padding: 35px 30px;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #0077b6;
+            margin-bottom: 28px;
+            font-size: 28px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #0077b6;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #0077b6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #005f87;
+        }
+
+        @media screen and (max-width: 600px) {
+            .planner-container {
+                margin: 20px;
+                padding: 25px 20px;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
-    <div class="min-h-screen flex items-center justify-center px-4 py-12">
-        <div class="max-w-3xl w-full bg-white p-8 rounded-lg shadow-lg">
-            <div class="flex justify-center items-center mb-6">
-                <h2 class="text-3xl font-bold text-center text-indigo-600">Plan Your Trip</h2>
-            </div>
-            <form class="space-y-6" action="{% url 'core:planner' %}" method="POST">
-                {% csrf_token %}
-                <!-- Destination -->
-                <div>
-                    <label for="destination" class="block text-sm font-medium text-gray-700">Destination</label>
-                    <input id="destination" name="destination" type="text" required
-                        placeholder="e.g. Pokhara, Kathmandu, Paris..."
-                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                        value="{{ form_data.destination|default:'' }}"/>
-                </div>
+<body>
+    <div class="planner-container">
+        <h2>Plan Your Trip</h2>
+        <form method="post" action="{% url 'core:planner' %}">
+            {% csrf_token %}
+            
+            <label for="style">Travel Style</label>
+            <select name="style" id="style" required>
+                <option value="">Select a style</option>
+                <option value="adventure">Adventure</option>
+                <option value="relaxation">Relaxation</option>
+                <option value="cultural">Cultural</option>
+                <option value="wildlife">Wildlife</option>
+                <option value="family-friendly">Family Friendly</option>
+                <option value="budget">Budget</option>
+                <option value="trekking">Trekking</option>
+            </select>
 
-                <!-- Travel Route (Optional) -->
-                <div>
-                    <label for="travel_route" class="block text-sm font-medium text-gray-700">Travel Route (Optional)</label>
-                    <input id="travel_route" name="travel_route" type="text"
-                        placeholder="e.g. Kathmandu to Pokhara, Europe tour..."
-                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                        value="{{ form_data.travel_route|default:'' }}"/>
-                </div>
+            <label for="weather">Weather Preference</label>
+            <select name="weather" id="weather">
+                <option value="any">Any</option>
+                <option value="sunny">Sunny</option>
+                <option value="warm">Warm</option>
+                <option value="cold">Cold</option>
+                <option value="rainy">Rainy</option>
+            </select>
 
-                <!-- Dates -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
-                        <input id="start_date" name="start_date" type="date" required
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                            value="{{ form_data.start_date|default:'' }}"/>
-                    </div>
-                    <div>
-                        <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
-                        <input id="end_date" name="end_date" type="date" required
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                            value="{{ form_data.end_date|default:'' }}"/>
-                    </div>
-                </div>
+            <label for="budget">Budget (NRS)</label>
+            <input type="number" name="budget" id="budget" min="100" max="10000"
+                value="{{ form_data.budget|default:'1000' }}" required>
 
-                <!-- Budget -->
-                <div>
-                    <label for="budget" class="block text-sm font-medium text-gray-700">Budget (NRS)</label>
-                    <input id="budget" name="budget" type="number" min="100" placeholder="e.g. 500"
-                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                        value="{{ form_data.budget|default:'' }}"/>
-                </div>
+            <label for="destination">Destination</label>
+            <input type="text" name="destination" id="destination" placeholder="e.g., Kathmandu"
+                value="{{ form_data.destination|default:'' }}" required>
 
-                <!-- Travel Style -->
-                <div>
-                    <label for="style" class="block text-sm font-medium text-gray-700">Travel Style</label>
-                    <select id="style" name="style"
-                        class="mt-1 block w-full px-4 py-2 border border-gray-300 bg-white rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="wildlife" {% if form_data.style == 'wildlife' %}selected{% endif %}>Wildlife</option>
-                        <option value="relaxation" {% if form_data.style == 'relaxation' %}selected{% endif %}>Relaxation</option>
-                        <option value="cultural" {% if form_data.style == 'cultural' %}selected{% endif %}>Cultural</option>
-                        <option value="trekking" {% if form_data.style == 'trekking' %}selected{% endif %}>Trekking</option>
-                        <option value="adventure" {% if form_data.style == 'adventure' %}selected{% endif %}>Adventure</option>
-                        <option value ="Family-friendly" {% if form_data.style == 'Family-friendly' %}selected{% endif %}>Family-friendly</option>
-                        <option value="budget" {% if form_data.style == 'budget' %}selected{% endif %}>Budget</option>
-                    </select>
-                </div>
+            <label for="travel_route">Travel Route</label>
+            <input type="text" name="travel_route" id="travel_route" placeholder="e.g., Pokhara to Mustang"
+                value="{{ form_data.travel_route|default:'' }}">
 
-                <!-- Weather Preferences -->
-                <div>
-                    <label for="weather" class="block text-sm font-medium text-gray-700">Weather Preferences</label>
-                    <select id="weather" name="weather"
-                        class="mt-1 block w-full px-4 py-2 border border-gray-300 bg-white rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="any" {% if form_data.weather == 'any' %}selected{% endif %}>Any Weather</option>
-                        <option value="sunny" {% if form_data.weather == 'sunny' %}selected{% endif %}>Sunny</option>
-                        <option value="warm" {% if form_data.weather == 'warm' %}selected{% endif %}>Warm</option>
-                        <option value="cold" {% if form_data.weather == 'cold' %}selected{% endif %}>Cold</option>
-                        <option value="rainy" {% if form_data.weather == 'rainy' %}selected{% endif %}>Rainy</option>
-                    </select>
-                </div>
+            <label for="start_date">Start Date</label>
+            <input type="date" name="start_date" id="start_date" value="{{ form_data.start_date|default:'' }}">
 
-                <!-- Submit -->
-                <div>
-                    <button type="submit"
-                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus-ring-indigo">
-                        Generate My Itinerary
-                    </button>
-                </div>
+            <label for="end_date">End Date</label>
+            <input type="date" name="end_date" id="end_date" value="{{ form_data.end_date|default:'' }}">
 
-                <!-- Back Button -->
-                <div class="mt-6 text-center">
-                    <a href="{% url 'core:index' %}" class="inline-flex items-center text-gray-600 hover:text-indigo-600 font-medium transition duration-150 ease-in-out focus-ring-indigo">
-                        <i class="fas fa-arrow-left mr-2"></i> Back to Home
-                    </a>
-                </div>
-            </form>
-
-            <!-- Display Recommendations if any -->
-            {% if recommended_places %}
-                <div class="mt-8 p-4 bg-indigo-50 rounded-md">
-                    <h3 class="text-xl font-semibold mb-4">Recommended Places:</h3>
-                    <ul class="list-disc list-inside">
-                        {% for place in recommended_places %}
-                            <li>{{ place }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        </div>
+            <button type="submit">Get Recommendations</button>
+        </form>
     </div>
 </body>
 </html>
