@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'ai_travel',
     'core',
+    #'accounts',
 ]
 
 MIDDLEWARE = [
