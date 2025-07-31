@@ -16,7 +16,7 @@ from difflib import get_close_matches
 
 # Dynamically build the absolute path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, 'C:\\Sandhya\\Project\\Django\\Dataset\\bert_chatbot_model')
+MODEL_PATH = os.path.join(BASE_DIR, 'C:\\Users\\rayam\\Downloads\\bert_chatbot_model')
 
 # Normalize and convert to absolute path
 MODEL_PATH = os.path.normpath(os.path.abspath(MODEL_PATH))
