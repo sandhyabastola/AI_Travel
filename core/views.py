@@ -8,9 +8,12 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import uuid
+import requests
+from django.urls import reverse
+
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
-
+from .recommendation_engine import ContentBasedRecommendationSystem
 from core.chatbot import get_chatbot_response, predict_intent_bert  # adjust import if needed
 from core.models import ChatHistory  # if using chat history model
 
@@ -164,26 +167,99 @@ def destinations(request):
 
 
 
-@login_required
-def planner(request):
-    if request.method == 'POST':
-        form = UserItineraryForm(request.POST)
-        if form.is_valid():
-            itinerary = form.save(commit=False)
-            itinerary.user = request.user
-            itinerary.save()
-            form.save_m2m()
+def planner_view(request):
+    """
+    Display the planner form on GET.
+    On POST, save form data to session and redirect to recommendations view.
+    """
+    if request.method == "POST":
+        travel_style = request.POST.get('style', '').lower()
+        weather = request.POST.get('weather', 'any')
+        budget = request.POST.get('budget', '1000')
 
-            ai_itinerary = generate_itinerary(itinerary)
+        request.session['form_data'] = {
+            'style': travel_style,
+            'weather': weather,
+            'budget': budget,
+            'destination': request.POST.get('destination', ''),
+            'travel_route': request.POST.get('travel_route', ''),
+            'start_date': request.POST.get('start_date', ''),
+            'end_date': request.POST.get('end_date', ''),
+        }
+        return redirect(reverse('core:recommendations'))
+    
+    form_data = request.session.get('form_data', {})
+    return render(request, 'planner.html', {'form_data': form_data})
 
-            return render(request, 'planner_result.html', {
-                'itinerary': itinerary,
-                'ai_suggestions': ai_itinerary
-            })
-    else:
-        form = UserItineraryForm()
+def recommendations_view(request):
+    """
+    Retrieve form data from session, generate recommendations,
+    enrich with weather and travel route info (API calls),
+    and render the recommendations page.
+    """
+    form_data = request.session.get('form_data')
+    if not form_data:
+        return redirect('core:planner')
 
-    return render(request, 'planner.html', {'form': form})
+    rec_engine = ContentBasedRecommendationSystem()
+    travel_style = form_data.get('style', 'wildlife')
+    weather = form_data.get('weather', 'any')
+    budget_amount = form_data.get('budget', '1000')
+    recommendations = rec_engine.recommend(travel_style, weather, budget_amount)
+
+    enriched_recommendations = []
+    for place in recommendations:
+        # Get extra info from your Destination dataset
+        try:
+            dest_obj = Destination.objects.get(name=place.get('name'))
+            category = dest_obj.category
+            place_name = dest_obj.place
+            district = dest_obj.district
+        except Destination.DoesNotExist:
+            category = place.get('category', 'N/A')
+            place_name = place.get('place', 'N/A')
+            district = place.get('district', 'N/A')
+
+        # Weather API integration
+        location_query = district or place_name or place.get('name')
+        weather_data = get_weather_data(location_query)
+        weather_info = weather_data.get('forecast', 'N/A') if weather_data else 'N/A'
+
+        # Google Maps API integration (placeholder)
+        from_location = form_data.get('destination', '')
+        to_location = place.get('name', '')
+        route_info = "N/A"
+        try:
+            if from_location and to_location:
+                maps_url = (
+                    f"https://maps.googleapis.com/maps/api/directions/json"
+                    f"?origin={from_location}&destination={to_location}&key=YOUR_GOOGLE_MAPS_API_KEY"
+                )
+                response = requests.get(maps_url)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('routes'):
+                        route_info = data['routes'][0].get('summary', 'Route found')
+        except Exception:
+            route_info = "N/A"
+
+        enriched_recommendations.append({
+            'name': place.get('name'),
+            'img': place.get('img_url'),
+            'description': place.get('description'),
+            'budget': place.get('budget_level'),
+            'travel_style': place.get('travel_style'),
+            'weather': weather_info,
+            'travel_route': route_info,
+            'category': category,
+            'place': place_name,
+            'district': district,
+        })
+
+    return render(request, 'recommendations.html', {
+        'recommendations': enriched_recommendations,
+        'form_data': form_data,
+    })
 
 # ✅ Renders chatbot UI page
 def chatbot_page(request):
