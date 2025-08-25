@@ -1,66 +1,192 @@
+{%load static%}
+{% csrf_token %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YatriBot Chat</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        #chatbox { border: 1px solid #ccc; padding: 10px; width: 400px; height: 300px; overflow-y: scroll; }
-        .msg { margin: 5px 0; }
-        .user { font-weight: bold; }
-        .bot { color: green; }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            max-width: 500px;
+            height: 85%;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #2575fc;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #chatbox {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f7f7f7;
+        }
+
+        .msg {
+            margin: 10px 0;
+            display: flex;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .msg.user {
+            justify-content: flex-end;
+        }
+
+        .msg.bot {
+            justify-content: flex-start;
+        }
+
+        .msg-content {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .msg.user .msg-content {
+            background: #2575fc;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .msg.bot .msg-content {
+            background: #e0e0e0;
+            color: #333;
+            border-bottom-left-radius: 5px;
+        }
+
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input button {
+            background: #2575fc;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .chat-input button:hover {
+            background: #1b5ed9;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .msg-content {
+                max-width: 90%;
+                font-size: 13px;
+            }
+            .chat-header {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h2>Chat with YatriBot 🤖</h2>
-    <div id="chatbox"></div>
-    <input type="text" id="message" placeholder="Type your message..." />
-    <button onclick="sendMessage()">Send</button>
+    <div class="chat-container">
+        <div class="chat-header">Chat with YatriBot 🤖</div>
+        <div id="chatbox"></div>
+        <div class="chat-input">
+            <input type="text" id="message" placeholder="Type your message..." onkeypress="if(event.key==='Enter'){sendMessage()}">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 
-    <script>
-        async function sendMessage() {
-            const input = document.getElementById('message');
-            const message = input.value;
-            if (!message) return;
+   <script>
+    async function sendMessage() {
+    const input = document.getElementById('message');
+    const message = input.value.trim();
+    if (!message) return;
 
-            appendMessage('You', message, 'user');
-            input.value = '';
+    appendMessage(message, 'user');
+    input.value = '';
 
-            const response = await fetch('/chatbot/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify({ message: message })
-            });
+    try {
+        const response = await fetch('/core/chatbot/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: JSON.stringify({ message: message }),
+    credentials: 'same-origin'   // ✅ ensures cookies are sent
+});
 
-            const data = await response.json();
-            appendMessage('YatriBot', data.response, 'bot');
-        }
 
-        function appendMessage(sender, text, cls) {
-            const div = document.getElementById('chatbox');
-            const msg = document.createElement('div');
-            msg.className = `msg ${cls}`;
-            msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
-            div.appendChild(msg);
-            div.scrollTop = div.scrollHeight;
-        }
+        const data = await response.json();
+        appendMessage(data.reply, 'bot');  // ✅ now matches Django
+    } catch (error) {
+        appendMessage("Something went wrong. Please try again.", 'bot');
+        console.error("Fetch error:", error);
+    }
+}
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+
+    function appendMessage(text, sender) {
+        const div = document.getElementById('chatbox');
+        const msg = document.createElement('div');
+        msg.className = `msg ${sender}`;
+        msg.innerHTML = `<div class="msg-content">${text}</div>`;
+        div.appendChild(msg);
+        div.scrollTop = div.scrollHeight;
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
-    </script>
+        return cookieValue;
+    }
+</script>
 </body>
 </html>
