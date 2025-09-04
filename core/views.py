@@ -167,11 +167,9 @@ def destinations(request):
 
 
 
+
 def planner_view(request):
-    """
-    Display the planner form on GET.
-    On POST, save form data to session and redirect to recommendations view.
-    """
+    
     if request.method == "POST":
         travel_style = request.POST.get('style', '').lower()
         weather = request.POST.get('weather', 'any')
@@ -181,6 +179,7 @@ def planner_view(request):
             'style': travel_style,
             'weather': weather,
             'budget': budget,
+            'category': request.POST.get('category', '').lower(),
             'destination': request.POST.get('destination', ''),
             'travel_route': request.POST.get('travel_route', ''),
             'start_date': request.POST.get('start_date', ''),
@@ -192,24 +191,30 @@ def planner_view(request):
     return render(request, 'planner.html', {'form_data': form_data})
 
 def recommendations_view(request):
-    """
-    Retrieve form data from session, generate recommendations,
-    enrich with weather and travel route info (API calls),
-    and render the recommendations page.
-    """
+    
     form_data = request.session.get('form_data')
     if not form_data:
         return redirect('core:planner')
 
     rec_engine = ContentBasedRecommendationSystem()
     travel_style = form_data.get('style', 'wildlife')
+    category = form_data.get('category', 'national park')
     weather = form_data.get('weather', 'any')
     budget_amount = form_data.get('budget', '1000')
-    recommendations = rec_engine.recommend(travel_style, weather, budget_amount)
+    destination = form_data.get('destination', '')  
+    travel_route = form_data.get('travel_route', '')  
+    
+    recommendations = rec_engine.recommend(
+        travel_style=travel_style,      
+        weather=weather,                
+        budget_amount=budget_amount,    
+        destination=destination,        
+        travel_route=travel_route,      
+        top_k=5
+    )
 
     enriched_recommendations = []
     for place in recommendations:
-        # Get extra info from your Destination dataset
         try:
             dest_obj = Destination.objects.get(name=place.get('name'))
             category = dest_obj.category
@@ -225,12 +230,12 @@ def recommendations_view(request):
         weather_data = get_weather_data(location_query)
         weather_info = weather_data.get('forecast', 'N/A') if weather_data else 'N/A'
 
-        # Google Maps API integration (placeholder)
+        # Google Maps API integration
         from_location = form_data.get('destination', '')
-        to_location = place.get('name', '')
+        to_location = place.get('location', '') or place.get('name', '')
         route_info = "N/A"
         try:
-            if from_location and to_location:
+            if from_location and to_location and from_location.strip() and to_location.strip():
                 maps_url = (
                     f"https://maps.googleapis.com/maps/api/directions/json"
                     f"?origin={from_location}&destination={to_location}&key=YOUR_GOOGLE_MAPS_API_KEY"
@@ -239,9 +244,12 @@ def recommendations_view(request):
                 if response.status_code == 200:
                     data = response.json()
                     if data.get('routes'):
-                        route_info = data['routes'][0].get('summary', 'Route found')
-        except Exception:
-            route_info = "N/A"
+                        route = data['routes'][0]['legs'][0]
+                        distance = route.get('distance', {}).get('text', 'Unknown distance')
+                        duration = route.get('duration', {}).get('text', 'Unknown duration')
+                        route_info = f"{distance}, {duration}"
+        except Exception as e:
+            route_info = "Route information unavailable"
 
         enriched_recommendations.append({
             'name': place.get('name'),
@@ -254,6 +262,7 @@ def recommendations_view(request):
             'category': category,
             'place': place_name,
             'district': district,
+            'location': place.get('location', ''),
         })
 
     return render(request, 'recommendations.html', {
