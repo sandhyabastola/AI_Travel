@@ -24,19 +24,31 @@ from core.weather import get_weather_data
 from .models import UserItinerary  # adjust import if needed
 
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from core.models import UserItinerary
+from .models import ItineraryItem
+from django.db.models import Count
+from datetime import datetime
+
 
 context = {
   
     'generation_date': timezone.now().date(),  
 }
 
+
+@login_required
+def profile(request):
+    return render(request, 'profile.html')
+
+@login_required
+def edit_profile(request):
+    return render(request, 'edit_profile.html')
+
+
 def index(request):
     featured_destinations = Destination.objects.filter(category__in=['city', 'mountain'])[:6]
     return render(request, 'index.html', {'destinations': featured_destinations})
-
-
-def dashboard(request):
-    return render(request, 'dashboard.html')
 
 def about(request):
      return render(request, 'about.html')
@@ -73,28 +85,207 @@ def help_center(request):
 def guides(request):
     # Placeholder for guides functionality
     return render(request, 'guides.html')
-
-def smart_itinerary(request):
-    try:
-        itinerary = UserItinerary.objects.get(user=request.user)
-        destinations = itinerary.destinations.all()
-        travel_dates = f"{itinerary.start_date} – {itinerary.end_date}"
-    except UserItinerary.DoesNotExist:
-        itinerary = None
-        destinations = []
-        travel_dates = "Not available"
-
+@login_required
+def dashboard(request):
+    user = request.user
+    
+    total_trips = UserItinerary.objects.filter(user=user).count()
+    total_itinerary_items = ItineraryItem.objects.filter(user=user).count()
+    
+    # Get recent itinerary items
+    recent_items = ItineraryItem.objects.filter(user=user).order_by('-created_at')[:10]
+    
+    # Get upcoming trips
+    upcoming_trips = UserItinerary.objects.filter(
+        user=user, 
+        start_date__gte=timezone.now().date()
+    ).order_by('start_date')[:5]
+    
+    # Get popular destinations from user's itineraries
+    popular_destinations = UserItinerary.objects.filter(user=user).values(
+        'destinations__name'
+    ).annotate(count=Count('destinations')).order_by('-count')[:3]
+    
     context = {
-        'itinerary': itinerary,
-        'destinations': destinations,
-        'travel_dates': travel_dates,
-        'generation_date': timezone.now().date(),
+        'total_trips': total_trips,
+        'total_itinerary_items': total_itinerary_items,
+        'recent_items': recent_items,
+        'upcoming_trips': upcoming_trips,
+        'popular_destinations': popular_destinations,
+        'user': user,
     }
+    return render(request, 'dashboard.html', context) 
 
-    return render(request, 'smart_itinerary.html', context)
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_itinerary_item(request):
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+            
+        title = data.get('title')
+        description = data.get('description', '')
+        time_str = data.get('time')
+        
+        if not title or not time_str:
+            return JsonResponse({'success': False, 'error': 'Title and time are required'})
+        
+        # Parse time
+        try:
+            time_obj = datetime.strptime(time_str, '%H:%M').time()
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Invalid time format. Use HH:MM'})
+        
+        # Create the itinerary item
+        item = ItineraryItem.objects.create(
+            user=request.user,
+            title=title,
+            description=description,
+            time=time_obj
+        )
+        
+        if request.content_type == 'application/json':
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': item.id,
+                    'title': item.title,
+                    'description': item.description,
+                    'time': item.time.strftime('%H:%M'),
+                    'created_at': item.created_at.strftime('%Y-%m-%d %H:%M')
+                }
+            })
+        else:
+            messages.success(request, 'Itinerary item added successfully!')
+            return redirect('core:dashboard')
+            
+    except Exception as e:
+        if request.content_type == 'application/json':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f'Error adding item: {str(e)}')
+            return redirect('core:dashboard')
 
+# Replace your existing delete_itinerary with this enhanced version
+@login_required
+@csrf_exempt
+@require_http_methods(["POST", "DELETE"])
+def delete_itinerary_item(request, item_id):
+    try:
+        item = get_object_or_404(ItineraryItem, id=item_id, user=request.user)
+        item_title = item.title
+        item.delete()
+        
+        if request.content_type == 'application/json' or request.method == 'DELETE':
+            return JsonResponse({'success': True, 'message': f'Item "{item_title}" deleted successfully'})
+        else:
+            messages.success(request, f'Item "{item_title}" deleted successfully!')
+            return redirect('core:dashboard')
+            
+    except Exception as e:
+        if request.content_type == 'application/json' or request.method == 'DELETE':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f'Error deleting item: {str(e)}')
+            return redirect('core:dashboard')
 
+# Add this new view for updating itinerary items
+@login_required
+@csrf_exempt
+@require_http_methods(["POST", "PUT"])
+def update_itinerary_item(request, item_id):
+    try:
+        item = get_object_or_404(ItineraryItem, id=item_id, user=request.user)
+        
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+            
+        # Update fields if provided
+        if 'title' in data and data['title']:
+            item.title = data['title']
+        if 'description' in data:
+            item.description = data['description']
+        if 'time' in data and data['time']:
+            try:
+                item.time = datetime.strptime(data['time'], '%H:%M').time()
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'Invalid time format. Use HH:MM'})
+        
+        item.save()
+        
+        if request.content_type == 'application/json':
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': item.id,
+                    'title': item.title,
+                    'description': item.description,
+                    'time': item.time.strftime('%H:%M'),
+                    'created_at': item.created_at.strftime('%Y-%m-%d %H:%M')
+                }
+            })
+        else:
+            messages.success(request, 'Itinerary item updated successfully!')
+            return redirect('core:dashboard')
+            
+    except Exception as e:
+        if request.content_type == 'application/json':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f'Error updating item: {str(e)}')
+            return redirect('core:dashboard')
 
+# Add this new view to get all itinerary items for a user
+@login_required
+def get_itinerary_items(request):
+    try:
+        items = ItineraryItem.objects.filter(user=request.user).order_by('-created_at')
+        items_data = []
+        
+        for item in items:
+            items_data.append({
+                'id': item.id,
+                'title': item.title,
+                'description': item.description,
+                'time': item.time.strftime('%H:%M'),
+                'created_at': item.created_at.strftime('%Y-%m-%d %H:%M')
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'items': items_data,
+            'total_count': len(items_data)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# Add this new view to get a single itinerary item
+@login_required
+def get_itinerary_item(request, item_id):
+    try:
+        item = get_object_or_404(ItineraryItem, id=item_id, user=request.user)
+        
+        return JsonResponse({
+            'success': True,
+            'item': {
+                'id': item.id,
+                'title': item.title,
+                'description': item.description,
+                'time': item.time.strftime('%H:%M'),
+                'created_at': item.created_at.strftime('%Y-%m-%d %H:%M')
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# Enhanced edit_itinerary view to work better with your structure
 def edit_itinerary(request, itinerary_id):
     try:
         itinerary = UserItinerary.objects.get(id=itinerary_id, user=request.user)
@@ -103,28 +294,56 @@ def edit_itinerary(request, itinerary_id):
         return redirect('core:dashboard')
 
     if request.method == 'POST':
-        form = UserItineraryForm(request.POST, instance=itinerary)
-        if form.is_valid():
-            form.save()
+        # Handle both JSON and form data
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+            
+        itinerary.title = data.get('title', itinerary.title)
+        itinerary.notes = data.get('notes', itinerary.notes)
+        
+        # Handle date updates
+        if data.get('start_date'):
+            try:
+                itinerary.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+            except ValueError:
+                messages.error(request, 'Invalid start date format')
+                
+        if data.get('end_date'):
+            try:
+                itinerary.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+            except ValueError:
+                messages.error(request, 'Invalid end date format')
+        
+        itinerary.save()
+        
+        if request.content_type == 'application/json':
+            return JsonResponse({
+                'success': True,
+                'itinerary': {
+                    'id': itinerary.id,
+                    'title': itinerary.title,
+                    'start_date': itinerary.start_date.strftime('%Y-%m-%d'),
+                    'end_date': itinerary.end_date.strftime('%Y-%m-%d'),
+                    'notes': itinerary.notes
+                }
+            })
+        else:
             messages.success(request, 'Itinerary updated successfully!')
             return redirect('core:dashboard')
-    else:
-        form = UserItineraryForm(instance=itinerary)
+    
+    context = {
+        'itinerary': itinerary,
+        'destinations': itinerary.destinations.all()
+    }
+    return render(request, 'edit_itinerary.html', context)
 
-    return render(request, 'edit_itinerary.html', {'form': form, 'itinerary': itinerary})
 
-def download_itinerary_pdf(request, itinerary_id):
-    try:
-        itinerary = UserItinerary.objects.get(id=itinerary_id, user=request.user)
-    except UserItinerary.DoesNotExist:
-        messages.error(request, 'Itinerary not found.')
-        return redirect('core:dashboard')
 
-    # Generate PDF logic here (not implemented in this snippet)
-    # For example, you could use a library like ReportLab or WeasyPrint
 
-    messages.success(request, 'PDF downloaded successfully!')
-    return redirect('core:dashboard')
+
+
 
 def hotel_list(request):
     query = request.GET.get('q')

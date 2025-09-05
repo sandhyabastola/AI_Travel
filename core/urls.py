@@ -14,11 +14,8 @@ urlpatterns = [
     path('chatbot/chat-api/', views.chat_api, name='chat_api'),
     path("chatbot/api/", views.chatbot_api, name="chatbot_api"),
     path('chatbot/', views.chatbot_page, name='chatbot_page'),
-    path('smart-itinerary/', views.smart_itinerary, name='smart_itinerary'),
-    path('edit-itinerary/<int:itinerary_id>/', views.edit_itinerary, name='edit_itinerary'),
-    path('download-itinerary-pdf/<int:itinerary_id>/', views.download_itinerary_pdf, name='download_itinerary_pdf'),
     path('profile/', views.profile, name='profile'),
-    path('edit-profile/', views.edit_profile, name='edit_profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register_view, name='register'),
@@ -32,4 +29,17 @@ urlpatterns = [
     path('blog/', views.blog, name='blog'),
     path('help-center/', views.help_center, name='help_center'),
     path('guides/', views.guides, name='guides'),
+    
+
+    path('add-itinerary-item/', views.add_itinerary_item, name='add_itinerary_item'),
+    path('update-itinerary-item/<int:item_id>/', views.update_itinerary_item, name='update_itinerary_item'),
+    path('delete-itinerary-item/<int:item_id>/', views.delete_itinerary_item, name='delete_itinerary_item'),
+    path('get-itinerary-items/', views.get_itinerary_items, name='get_itinerary_items'),
+    path('get-itinerary-item/<int:item_id>/', views.get_itinerary_item, name='get_itinerary_item'),
+    
+    # Optional: Edit full itinerary
+    path('itinerary/<int:itinerary_id>/edit/', views.edit_itinerary, name='edit_itinerary'), 
+    path('user-itinerary/', views.user_itinerary_view, name='user_itinerary_view'),
+
+    
 ]

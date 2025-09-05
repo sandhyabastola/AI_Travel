@@ -20,10 +20,9 @@ class Destination(models.Model):
 
 
 class UserProfile(models.Model):
-   user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
-   bio = models.TextField(blank=True)
-   location = models.CharField(max_length=100, blank=True)
-   avatar = models.ImageField(upload_to='avatars/', null=True, blank=True) 
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(upload_to='avatars/', default='avatars/default.png')
+    bio = models.TextField(blank=True, null=True)
 
 def __str__(self):
         return f"{self.user.username}'s profile"
@@ -38,6 +37,16 @@ class UserItinerary(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user.username}"
+    
+class ItineraryItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  # link to user
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
 
 
 class ChatHistory(models.Model):
