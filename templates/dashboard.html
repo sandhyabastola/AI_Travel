@@ -5,128 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nepal Travel Dashboard</title>
-    <style>
-        /* --- Reset & body --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
-            min-height: 100vh;
-            color: white;
-        }
-
-        /* --- Header --- */
-        .header {
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-        .logo { font-size: 24px; font-weight: bold; }
-        .nav { display: flex; gap: 30px; align-items: center; }
-        .nav a { color: white; text-decoration: none; font-weight: 500; transition: opacity 0.3s; }
-        .nav a:hover { opacity: 0.8; }
-        .user-info { color: rgba(255, 255, 255, 0.8); font-size: 14px; }
-
-        /* --- Container --- */
-        .container { padding: 30px 40px; max-width: 1200px; margin: 0 auto; }
-
-        /* --- Stats --- */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card {
-            background: rgba(255,255,255,0.9);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            color: #2d3748;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .stat-card h3 { font-size: 18px; margin-bottom: 15px; color: #4a5568; }
-        .stat-number, .stat-location { font-size: 36px; font-weight: bold; color: #2d3748; }
-
-        /* --- Bottom Section --- */
-        .bottom-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-        .section-card {
-            background: rgba(255,255,255,0.9);
-            border-radius: 15px;
-            padding: 30px;
-            color: #2d3748;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .section-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #2d3748; }
-        .trip-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
-        .trip-item:last-child { border-bottom: none; margin-bottom: 0; }
-        .trip-title { font-size: 18px; font-weight: 600; margin-bottom: 5px; color: #2d3748; }
-        .trip-date { color: #6b7280; font-size: 14px; }
-
-        /* --- Itinerary Section --- */
-        .itinerary-section { background: rgba(255,255,255,0.9); border-radius: 15px; padding: 30px; color: #2d3748; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .itinerary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .add-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-        .add-btn:hover { background: #2563eb; }
-        .itinerary-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; margin-bottom: 10px;
-            background: #f8fafc; border-radius: 8px;
-            border-left: 4px solid #3b82f6; transition: all 0.3s ease;
-        }
-        .itinerary-content { flex: 1; }
-        .itinerary-title { font-weight: 600; margin-bottom: 5px; }
-        .itinerary-details { font-size: 14px; color: #6b7280; }
-        .itinerary-actions { display: flex; gap: 10px; align-items: center; }
-        .itinerary-time { color: #3b82f6; font-weight: 500; margin-right: 15px; }
-        .action-btn { border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.3s; }
-        .edit-btn { background: #f59e0b; color: white; }
-        .edit-btn:hover { background: #d97706; }
-        .delete-btn { background: #ef4444; color: white; }
-        .delete-btn:hover { background: #dc2626; }
-
-        /* --- Modal --- */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content {
-            background-color: white; margin: 10% auto; padding: 30px; border-radius: 15px;
-            width: 90%; max-width: 500px; color: #2d3748;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .close { color: #6b7280; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close:hover { color: #374151; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
-        .form-group textarea { resize: vertical; height: 80px; }
-        .form-actions { display: flex; gap: 10px; justify-content: flex-end; }
-        .btn-secondary { background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-        .btn-secondary:hover { background: #4b5563; }
-        .empty-state { text-align: center; padding: 40px; color: #6b7280; }
-        .empty-state h3 { margin-bottom: 10px; color: #374151; }
-        .alert { padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px; }
-        .alert-success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .alert-error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .loading { text-align: center; padding: 20px; color: #6b7280; }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
 <body>
+
 <header class="header">
     <div class="logo">Exploring Nepal with AI</div>
+    
+    <!-- Quick actions in header -->
     <nav class="nav">
         <a href="{% url 'core:dashboard' %}">Dashboard</a>
-        <a href="{% url 'core:planner' %}">Plan Trip</a>
+        <a href="{% url 'core:planner' %}">Plan New Trip</a>
         <a href="{% url 'core:destinations' %}">Destinations</a>
-        <a href="{% url 'core:profile' %}">Profile</a>
-        <div class="user-info">Welcome, {{ user.username }}!</div>
+        <a href="{% url 'core:chatbot_page' %}">Ask Travel Assistant</a>
     </nav>
+
+    <!-- User Avatar -->
+    <div class="user-info flex items-center space-x-2 ml-6">
+        {% if user.userprofile.avatar and user.userprofile.avatar.name %}
+            <img src="{{ user.userprofile.avatar.url }}" 
+                 alt="Profile Picture" 
+                 class="w-8 h-8 rounded-full border border-blue-600 object-cover">
+        {% else %}
+            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
+                {{ user.username|slice:":1"|upper }}
+            </div>
+        {% endif %}
+        <span class="text-sm text-gray-700">{{ user.first_name }}</span>
+    </div>
 </header>
 
 <div class="container">
@@ -182,42 +88,36 @@
         </div>
 
         <div class="section-card">
-            <h2 class="section-title">Quick Actions</h2>
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <a href="{% url 'core:planner' %}" class="add-btn" style="text-decoration: none; text-align: center;">Plan New Trip</a>
-                <a href="{% url 'core:destinations' %}" class="btn-secondary" style="text-decoration: none; text-align: center;">Browse Destinations</a>
-                <a href="{% url 'core:chatbot_page' %}" class="btn-secondary" style="text-decoration: none; text-align: center;">Ask Travel Assistant</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Itinerary Section -->
-    <div class="itinerary-section">
-        <div class="itinerary-header">
-            <h2 class="section-title">My Itinerary Items</h2>
-            <button class="add-btn" onclick="openModal()">+ Add Item</button>
-        </div>
-        <div id="itinerary-list">
-            {% if recent_items %}
-                {% for item in recent_items %}
-                    <div class="itinerary-item" data-id="{{ item.id }}">
-                        <div class="itinerary-content">
-                            <div class="itinerary-title">{{ item.title }}</div>
-                            <div class="itinerary-details">{{ item.description|default:"No description" }}</div>
+            <h2 class="section-title">Itinerary</h2>
+            <div id="itinerary-list">
+                {% if recent_items %}
+                    {% for item in recent_items %}
+                        <div class="itinerary-item" data-id="{{ item.id }}">
+                            <div class="itinerary-content">
+                                <div class="itinerary-title">{{ item.title }}</div>
+                                <div class="itinerary-details">
+                                    {{ item.description|default:"No description" }}<br>
+                                    <strong>Date:</strong> {{ item.date|date:"M d, Y" }}<br>
+                                    <strong>Budget:</strong> Rs. {{ item.budget|default:0 }}
+                                </div>
+                            </div>
+                            <div class="itinerary-actions">
+                                <div class="itinerary-time">{{ item.time|time:"H:i" }}</div>
+                                <button class="action-btn edit-btn" 
+                                    onclick="editItem({{ item.id }}, '{{ item.title }}', '{{ item.description }}', '{{ item.time|time:'H:i' }}', '{{ item.date|date:'Y-m-d' }}', '{{ item.budget|default:0 }}')">
+                                    Edit
+                                </button>
+                                <button class="action-btn delete-btn" onclick="deleteItem({{ item.id }})">Delete</button>
+                            </div>
                         </div>
-                        <div class="itinerary-actions">
-                            <div class="itinerary-time">{{ item.time|time:"H:i" }}</div>
-                            <button class="action-btn edit-btn" onclick="editItem({{ item.id }}, '{{ item.title }}', '{{ item.description }}', '{{ item.time|time:"H:i" }}')">Edit</button>
-                            <button class="action-btn delete-btn" onclick="deleteItem({{ item.id }})">Delete</button>
-                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No items in your itinerary</h3>
+                        <p>Click "Add Item" to start planning your trip!</p>
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state">
-                    <h3>No items in your itinerary</h3>
-                    <p>Click "Add Item" to start planning your trip!</p>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -239,6 +139,14 @@
                 <input type="time" id="itemTime" name="time" required>
             </div>
             <div class="form-group">
+                <label for="itemDate">Date</label>
+                <input type="date" id="itemDate" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="itemBudget">Budget (Rs.)</label>
+                <input type="number" id="itemBudget" name="budget" required>
+            </div>
+            <div class="form-group">
                 <label for="itemDescription">Description</label>
                 <textarea id="itemDescription" name="description" placeholder="Brief description of the activity"></textarea>
             </div>
@@ -249,6 +157,10 @@
         </form>
     </div>
 </div>
+
+
+</body>
+</html>
 
 <!-- Add this debugging JavaScript section to your dashboard.html template -->
 <script>
@@ -296,13 +208,16 @@
             editingItemId = null;
         }
 
-        function editItem(id, title, description, time) {
+        function editItem(id, title, description, time, date='', budget='') {
             editingItemId = id;
             document.getElementById('itemTitle').value = title;
             document.getElementById('itemDescription').value = description;
             document.getElementById('itemTime').value = time;
+            document.getElementById('itemDate').value = date;
+            document.getElementById('itemBudget').value = budget;
             openModal(true);
         }
+
 
         function deleteItem(itemId) {
             if (confirm('Are you sure you want to delete this item?')) {
@@ -341,8 +256,11 @@
             const formData = {
                 title: document.getElementById('itemTitle').value,
                 time: document.getElementById('itemTime').value,
+                date: document.getElementById('itemDate').value,
+                budget: document.getElementById('itemBudget').value,
                 description: document.getElementById('itemDescription').value,
             };
+
 
             console.log('Form data:', formData); // Debug log
             console.log('Editing item ID:', editingItemId); // Debug log
