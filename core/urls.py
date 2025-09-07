@@ -37,8 +37,7 @@ urlpatterns = [
     path('get-itinerary-items/', views.get_itinerary_items, name='get_itinerary_items'),
     path('get-itinerary-item/<int:item_id>/', views.get_itinerary_item, name='get_itinerary_item'),
     
-    # Optional: Edit full itinerary
-    path('itinerary/<int:itinerary_id>/edit/', views.edit_itinerary, name='edit_itinerary'), 
+
     path('user-itinerary/', views.user_itinerary_view, name='user_itinerary_view'),
 
     
