@@ -14,6 +14,7 @@ import uuid
 import requests
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+from django.urls import reverse
 
 from core.models import (
     Destination, UserItinerary, ItineraryItem, ChatHistory,
@@ -24,7 +25,8 @@ from core.itinerary import generate_itinerary
 from core.weather import get_weather_data
 from core.recommendation_engine import ContentBasedRecommendationSystem
 from core.chatbot import get_chatbot_response, predict_intent_bert
-
+from .recommender import LocationBasedSearch, ContentBasedRecommender, UserBasedRecommender
+from .models import LikeRating
 # -------------------------------
 # Basic pages
 # -------------------------------
@@ -354,21 +356,46 @@ def hotel_detail(request, hotel_id):
 # -------------------------------
 
 def destinations(request):
-    destinations = Destination.objects.all()
-    categories = Destination.objects.values_list('category', flat=True).distinct()
-    query = request.GET.get('q')
-    category_filter = request.GET.get('category')
+    search_query = request.GET.get('q', '').strip()
+    location_recommender = LocationBasedSearch()
+    content_recommender = ContentBasedRecommender()
 
-    if query:
-        destinations = destinations.filter(Q(name__icontains=query) | Q(description__icontains=query))
-    if category_filter:
-        destinations = destinations.filter(category=category_filter)
+    # 1️⃣ Search results (direct match)
+    if search_query:
+        search_results = location_recommender.search_by_location(search_query)
+    else:
+        search_results = []
+    # Attach liked_obj for each destination (if user is authenticated)
+    if request.user.is_authenticated:
+        for dest in search_results:
+            # Assuming dest has an 'id' key
+            dest['liked_obj'] = LikeRating.objects.filter(
+                destination_id=dest['id'],
+                user=request.user
+            ).first()
+    else:
+        for dest in search_results:
+            dest['liked_obj'] = None
+
+    # 2️⃣ Content-based similar destinations
+    content_recommendations = []
+    if search_results:
+        content_recommendations = content_recommender.recommend_similar(search_results[0]['name'])
+
+    # 3️⃣ User-specific recommendations
+    user_recommendations = []
+    if request.user.is_authenticated:
+        user_recommendations = UserBasedRecommender.recommend_from_likes(request.user, top_n=5)
+
+    # Ratings list for template
+    ratings = [1, 2, 3, 4, 5]
 
     return render(request, 'destinations.html', {
-        'destinations': destinations,
-        'categories': categories,
-        'selected_category': category_filter,
-        'search_query': query,
+        'search_query': search_query,
+        'destinations': search_results,
+        'recommendations': content_recommendations,
+        'user_recommendations': user_recommendations,
+        'ratings': ratings,
     })
 
 # -------------------------------
@@ -376,27 +403,50 @@ def destinations(request):
 # -------------------------------
 
 def planner_view(request):
+    
     if request.method == "POST":
+        travel_style = request.POST.get('style', '').lower()
+        weather = request.POST.get('weather', 'any')
+        budget = request.POST.get('budget', '1000')
+
         request.session['form_data'] = {
-            'style': request.POST.get('style', '').lower(),
-            'weather': request.POST.get('weather', 'any'),
-            'budget': request.POST.get('budget', '1000'),
+            'style': travel_style,
+            'weather': weather,
+            'budget': budget,
+            'category': request.POST.get('category', '').lower(),
             'destination': request.POST.get('destination', ''),
             'travel_route': request.POST.get('travel_route', ''),
             'start_date': request.POST.get('start_date', ''),
             'end_date': request.POST.get('end_date', ''),
         }
-        return redirect('core:recommendations')
+        return redirect(reverse('core:recommendations'))
+    
     form_data = request.session.get('form_data', {})
     return render(request, 'planner.html', {'form_data': form_data})
 
+
 def recommendations_view(request):
+    
     form_data = request.session.get('form_data')
     if not form_data:
         return redirect('core:planner')
 
     rec_engine = ContentBasedRecommendationSystem()
-    recommendations = rec_engine.recommend(form_data.get('style', 'wildlife'), form_data.get('weather', 'any'), form_data.get('budget', '1000'))
+    travel_style = form_data.get('style', 'wildlife')
+    category = form_data.get('category', 'national park')
+    weather = form_data.get('weather', 'any')
+    budget_amount = form_data.get('budget', '1000')
+    destination = form_data.get('destination', '')  
+    travel_route = form_data.get('travel_route', '')  
+    
+    recommendations = rec_engine.recommend(
+        travel_style=travel_style,      
+        weather=weather,                
+        budget_amount=budget_amount,    
+        destination=destination,        
+        travel_route=travel_route,      
+        top_k=5
+    )
 
     enriched_recommendations = []
     for place in recommendations:
@@ -410,22 +460,31 @@ def recommendations_view(request):
             place_name = place.get('place', 'N/A')
             district = place.get('district', 'N/A')
 
-        weather_data = get_weather_data(district or place_name or place.get('name'))
+        # Weather API integration
+        location_query = district or place_name or place.get('name')
+        weather_data = get_weather_data(location_query)
         weather_info = weather_data.get('forecast', 'N/A') if weather_data else 'N/A'
 
-        route_info = "N/A"
+        # Google Maps API integration
         from_location = form_data.get('destination', '')
-        to_location = place.get('name', '')
+        to_location = place.get('location', '') or place.get('name', '')
+        route_info = "N/A"
         try:
-            if from_location and to_location:
-                maps_url = f"https://maps.googleapis.com/maps/api/directions/json?origin={from_location}&destination={to_location}&key=YOUR_GOOGLE_MAPS_API_KEY"
+            if from_location and to_location and from_location.strip() and to_location.strip():
+                maps_url = (
+                    f"https://maps.googleapis.com/maps/api/directions/json"
+                    f"?origin={from_location}&destination={to_location}&key=YOUR_GOOGLE_MAPS_API_KEY"
+                )
                 response = requests.get(maps_url)
                 if response.status_code == 200:
                     data = response.json()
                     if data.get('routes'):
-                        route_info = data['routes'][0].get('summary', 'Route found')
-        except:
-            route_info = "N/A"
+                        route = data['routes'][0]['legs'][0]
+                        distance = route.get('distance', {}).get('text', 'Unknown distance')
+                        duration = route.get('duration', {}).get('text', 'Unknown duration')
+                        route_info = f"{distance}, {duration}"
+        except Exception as e:
+            route_info = "Route information unavailable"
 
         enriched_recommendations.append({
             'name': place.get('name'),
@@ -438,12 +497,14 @@ def recommendations_view(request):
             'category': category,
             'place': place_name,
             'district': district,
+            'location': place.get('location', ''),
         })
 
     return render(request, 'recommendations.html', {
         'recommendations': enriched_recommendations,
         'form_data': form_data,
     })
+
 
 # -------------------------------
 # Chatbot

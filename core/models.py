@@ -2,22 +2,34 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Destination(models.Model):
-    CATEGORY_CHOICES = [
-        ('city', 'City'),
-        ('mountain', 'Mountain'),
-        ('nature', 'Nature'),
-        ('cultural', 'Cultural'),
-        ('adventure', 'Adventure'),
-    ]
-
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    img_url = models.URLField(blank=True, null=True)
+    category = models.CharField(max_length=100, blank=True, null=True)
+    place = models.CharField(max_length=255, blank=True, null=True)
+    travel_style = models.CharField(max_length=100, blank=True, null=True)
+    district = models.CharField(max_length=100, blank=True, null=True)
     image = models.ImageField(upload_to='destinations/', blank=True, null=True)
 
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['name']
+        
+
+class LikeRating(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    destination = models.ForeignKey(Destination, on_delete=models.CASCADE)
+    liked = models.BooleanField(default=False)
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-5 stars
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "destination")  # one record per user-destination
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.destination.name} | Like: {self.liked} | Rating: {self.rating}"
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
