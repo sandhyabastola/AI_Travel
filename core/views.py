@@ -333,6 +333,7 @@ def user_itinerary_view(request):
         form = UserItineraryForm()
     return render(request, 'smart_itinerary.html', {'form': form})
 
+
 # -------------------------------
 # Hotels
 # -------------------------------
