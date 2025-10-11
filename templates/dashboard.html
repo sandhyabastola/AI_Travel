@@ -6,14 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nepal Travel Dashboard</title>
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
     
 </head>
 <body>
 
 <header class="header">
-    <div class="logo">Nepal AI Travel</div>
-    
+    <div class="flex items-center">
+        <a href="{% url 'core:index' %}" class="flex-shrink-0 flex items-center">
+            <img src="media/uploads/logo.png" alt="Logo" class="h-8 w-8 rounded-full">
+                <span class="ml-2 text-xl font-bold text-white">Nepal AI Travel</span>
+        </a>
+    </div>    
     <!-- Quick actions in header -->
     <nav class="nav">
         <a href="{% url 'core:dashboard' %}">Dashboard</a>
