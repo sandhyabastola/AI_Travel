@@ -144,10 +144,10 @@
     input.value = '';
 
     try {
-        const response = await fetch('/core/chatbot/chat-api', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
+        const response = await fetch('/core/chatbot/chat-api/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken'),
     },
     body: JSON.stringify({ message: message }),
@@ -156,7 +156,7 @@
 
 
         const data = await response.json();
-        appendMessage(data.reply, 'bot');  // ✅ now matches Django
+        appendMessage(data.response, 'bot');  // ✅ now matches Django
     } catch (error) {
         appendMessage("Something went wrong. Please try again.", 'bot');
         console.error("Fetch error:", error);

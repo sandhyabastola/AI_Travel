@@ -17,7 +17,7 @@ load_dotenv()
 from decouple import config
 
 OPENWEATHER_API_KEY = config("OPENWEATHER_API_KEY")
-
+BERT_CHATBOT_MODEL = config("BERT_CHATBOT_MODEL", default=Path(r"I:\7th sem\Final Year Project\Datasets\bert_chatbot_model"))
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
