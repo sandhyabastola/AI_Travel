@@ -1,44 +1,45 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Profile</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-</head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center">
+  <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 
+</head>
+
+<body>
   <!-- Header -->
-  <div class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-6 shadow-md mb-10">
-    <h1 class="text-center text-white text-3xl font-bold tracking-wide">My Profile</h1>
+  
+  <div class="header">
+    <h1>My Profile</h1>
   </div>
 
   <!-- Profile Card -->
-  <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full transform transition hover:-translate-y-1 hover:shadow-2xl">
-    <div class="flex flex-col items-center">
+  <div class="profile-card">
+    <div class="profile-content">
       
       <!-- Profile Image -->
-      <div class="mb-4">
+      <div class="avatar">
         {% if user.userprofile.avatar and user.userprofile.avatar.name %}
-          <img src="{{ user.userprofile.avatar.url }}" 
-               alt="Profile Picture" 
-               class="w-28 h-28 rounded-full shadow-lg border-4 border-blue-600 object-cover">
+          <img src="{{ user.userprofile.avatar.url }}" alt="Profile Picture">
         {% else %}
-          <!-- Fallback: show first letter of username -->
-          <div class="w-28 h-28 rounded-full shadow-lg border-4 border-blue-600 bg-gray-200 flex items-center justify-center text-gray-600 text-3xl font-bold">
+          <div class="avatar-fallback">
             {{ user.username|slice:":1"|upper }}
           </div>
         {% endif %}
       </div>
 
       <!-- Username & Email -->
-      <h2 class="text-2xl font-bold text-gray-800">{{ user.username }}</h2>
-      <p class="text-gray-500 text-sm">{{ user.email }}</p>
+      <h2 class="username">{{ user.username }}</h2>
+      <p class="email">{{ user.email }}</p>
 
       <!-- About Section -->
-      <div class="w-full border-t mt-6 pt-6 text-center">
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">About Me</h3>
-        <p class="text-gray-600 text-sm leading-relaxed">
+      <div class="about">
+        <h3>About Me</h3>
+        <p>
           {% if user.userprofile.bio %}
             {{ user.userprofile.bio }}
           {% else %}
@@ -47,25 +48,13 @@
         </p>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="mt-8 w-full flex flex-col space-y-3">
-        <a href="{% url 'core:edit_profile' %}" 
-           class="block w-full text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 rounded-lg font-medium shadow hover:opacity-90 transition">
-          Edit Profile
-        </a>
-        <a href="{% url 'core:logout' %}" 
-           class="block w-full text-center bg-gray-200 text-gray-800 py-2.5 rounded-lg font-medium shadow hover:bg-gray-300 transition">
-          Log Out
-        </a>
+      <!-- Buttons -->
+      <div class="actions">
+        <a href="{% url 'core:edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+        <a href="{% url 'core:logout' %}" class="btn btn-secondary">Log Out</a>
       </div>
 
     </div>
   </div>
-
-  <!-- Footer -->
-  <footer class="mt-10 text-gray-500 text-sm">
-    &copy; {{ now|date:"Y" }} AI Travel. All rights reserved.
-  </footer>
-
 </body>
 </html>
