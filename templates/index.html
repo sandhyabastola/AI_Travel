@@ -65,7 +65,7 @@
         Your Profile
     </a>
     
-    <form method="post" action="{% url 'logout' %}">
+    <form method="post" action="{% url 'core:logout' %}">
         {% csrf_token %}
         <button type="submit" class="w-full text-left block px-4 py-2 text-gray-200 hover:bg-gray-700" role="menuitem">
             Log Out
@@ -76,10 +76,10 @@
     </div>
     {% else %}
     <!-- 👤 Show these only when NOT logged in -->
-    <a href="{% url 'signup' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 transition duration-150 ease-in-out">
+    <a href="{% url 'core:register' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 transition duration-150 ease-in-out">
         Sign Up
     </a>
-    <a href="{% url 'login' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 transition duration-150 ease-in-out">
+    <a href="{% url 'core:login' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 transition duration-150 ease-in-out">
         Login
     </a>
     {% endif %}
@@ -340,16 +340,6 @@
            
         </div>
     </footer>
-
-
-
-
-
-
-
-
-
-
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
