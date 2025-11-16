@@ -36,7 +36,7 @@ class UserProfile(models.Model):
     avatar = models.ImageField(upload_to='avatars/', default='avatars/default.png')
     bio = models.TextField(blank=True, null=True)
 
-def __str__(self):
+    def __str__(self):  # Fixed: Added proper indentation
         return f"{self.user.username}'s profile"
 
 class UserItinerary(models.Model):
@@ -82,18 +82,21 @@ class Transportation(models.Model):
         ('flight', 'Flight'),
         ('jeep', 'Jeep'),
         ('private', 'Private Vehicle'),
+        ('car_rental', 'Car Rental'),
+        ('taxi', 'Taxi'),
         # Add more if needed
     ]
 
-    from_destination = models.ForeignKey(Destination, related_name='transport_from', on_delete=models.CASCADE)
-    to_destination = models.ForeignKey(Destination, related_name='transport_to', on_delete=models.CASCADE)
-    transport_type = models.CharField(max_length=20, choices=TRANSPORT_TYPES)
-    duration = models.DurationField()
-    cost = models.DecimalField(max_digits=8, decimal_places=2)
+    from_location = models.ForeignKey('Destination', on_delete=models.CASCADE, related_name='transport_from')
+    to_location = models.ForeignKey('Destination', on_delete=models.CASCADE, related_name='transport_to')
+    mode = models.CharField(max_length=20, choices=TRANSPORT_TYPES)
+    duration = models.DurationField(help_text="Travel duration")
+    cost = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField(blank=True)
-
+    
     def __str__(self):
-        return f"{self.transport_type} from {self.from_destination} to {self.to_destination}"
+        return f"{self.from_location} to {self.to_location} by {self.mode}"
+
     
 class Hotel(models.Model):
     name = models.CharField(max_length=200)

@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YatriBot - Nepal Travel Assistant</title>
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -12,6 +14,9 @@
     <link rel="stylesheet" href="{% static 'css/chat.css' %}">
 </head>
 <body class="bg-gray-50">
+    <!-- CSRF Token for AJAX requests -->
+    {% csrf_token %}
+    
     <!-- Back to Home Button -->
     <div class="back-home">
         <a href="{% url 'core:index' %}" class="back-btn">
@@ -28,7 +33,7 @@
                 <p class="sub-header">Your Intelligent Nepal Travel Assistant</p>
             </div>
 
-            {% comment %} <!-- Chat Messages - COMMENTED OUT -->
+            <!-- Chat Messages - UNCOMMENTED -->
             <div class="chat-messages" id="chatMessages">
                 <div class="bot-message">
                     <div class="message-content">
@@ -44,7 +49,7 @@
                         How can I assist you today?
                     </div>
                 </div>
-            </div> {% endcomment %}
+            </div>
 
             <!-- Quick Actions -->
             <div class="quick-actions">

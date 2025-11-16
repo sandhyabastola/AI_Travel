@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+from django.conf import settings
 
 class ContentBasedRecommendationSystem:
     def __init__(self):
@@ -8,28 +9,41 @@ class ContentBasedRecommendationSystem:
         self.load_data()
 
     def load_data(self):
-        dataset_path = os.path.join(os.path.dirname(__file__), 'data', 'nepal_dataset.csv')
-        with open(dataset_path, 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            unique_places = set()
-            for row in reader:
-                name = row.get('name', '').strip()
-                if not name or name in unique_places:
-                    continue
-                unique_places.add(name)
+        # Use Django's BASE_DIR to get the correct path
+        dataset_path = os.path.join(settings.BASE_DIR, 'data', 'nepal_dataset.csv')
+        
+        try:
+            with open(dataset_path, 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                unique_places = set()
+                for row in reader:
+                    name = row.get('name', '').strip()
+                    if not name or name in unique_places:
+                        continue
+                    unique_places.add(name)
 
-                self.data.append({
-                    'place_id': row.get('place_id', '').strip(),
-                    'name': name,
-                    'category': row.get('category', '').strip().lower(),
-                    'travel_style': row.get('travel_style', '').strip().lower(),
-                    'weather': row.get('weather', '').strip().lower(),
-                    'budget_level': row.get('budget_level', '').strip().lower(),
-                    'description': row.get('description', '').strip(),
-                    'img_url': row.get('img_url', '').strip(),
-                    'district': row.get('district', '').strip(),
-                    'location': row.get('location', '').strip(),
-                })
+                    self.data.append({
+                        'place_id': row.get('place_id', '').strip(),
+                        'name': name,
+                        'category': row.get('category', '').strip().lower(),
+                        'travel_style': row.get('travel_style', '').strip().lower(),
+                        'weather': row.get('weather', '').strip().lower(),
+                        'budget_level': row.get('budget_level', '').strip().lower(),
+                        'description': row.get('description', '').strip(),
+                        'img_url': row.get('img_url', '').strip(),
+                        'district': row.get('district', '').strip(),
+                        'location': row.get('location', '').strip(),
+                    })
+            print(f"✅ Successfully loaded {len(self.data)} places from dataset")
+                    
+        except FileNotFoundError:
+            print(f"❌ Error: File not found at {dataset_path}")
+            print("Please make sure 'nepal_dataset.csv' exists in the 'data' folder")
+            # Create empty data to prevent further errors
+            self.data = []
+        except Exception as e:
+            print(f"❌ Error loading dataset: {e}")
+            self.data = []
 
     # ------------------- Normalization helpers -------------------
 
@@ -117,6 +131,19 @@ class ContentBasedRecommendationSystem:
 
     def recommend(self, travel_style, weather, budget_amount,
                   destination=None, travel_route=None, category=None, top_k=5):
+        
+        # Check if data is loaded
+        if not self.data:
+            return [{
+                'name': 'No recommendations available',
+                'district': 'Dataset not loaded',
+                'travel_style': 'N/A',
+                'weather': 'N/A',
+                'budget_level': 'N/A',
+                'category': 'N/A',
+                'description': 'Please check if nepal_dataset.csv exists in the data folder'
+            }]
+        
         scored_places = []
 
         for place in self.data:

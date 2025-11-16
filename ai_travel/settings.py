@@ -14,10 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
-from decouple import config
-
-OPENWEATHER_API_KEY = config("OPENWEATHER_API_KEY")
-BERT_CHATBOT_MODEL = config("BERT_CHATBOT_MODEL", default=Path(r"I:\7th sem\Final Year Project\Datasets\bert_chatbot_model"))
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -50,7 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'ai_travel',
     'core',
-    'user',
 ]
 
 MIDDLEWARE = [
@@ -131,6 +127,21 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# CORS
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# API Keys
+OPENWEATHER_API_KEY = "763c7e6b10074e25c032c794ab6c52fc"
+MAPS_API_KEY = "AIzaSyC4legDJOMkpHo3bPwCm9tMFwERb-HyAlg"
+
+# Data paths
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

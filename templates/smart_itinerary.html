@@ -1,49 +1,531 @@
-{%load static%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Smart Itinerary</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Itinerary - YatriBot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .destination-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #667eea;
+        }
+        .destination-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .activity-timeline {
+            border-left: 3px solid #667eea;
+            margin-left: 10px;
+        }
+        .budget-meter {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .budget-progress {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .print-only {
+            display: none;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            .print-only {
+                display: block;
+            }
+            .destination-card {
+                break-inside: avoid;
+            }
+        }
+    </style>
 </head>
-<body>
-<div class="container mt-5">
-    <h1 class="mb-4 text-center">🗺️ Smart Itinerary Planner</h1>
-
-    <!-- Destination Info -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h4 class="card-title">{{ destination.name }}</h4>
-            <p class="card-text">{{ destination.description }}</p>
-            <p><strong>Travel Dates:</strong> {{ travel_dates }}</p>
-        </div>
-    </div>
-
-    <!-- Day-wise Itinerary -->
-    {% for day, plan in itinerary.items %}
-    <div class="card mb-3">
-        <div class="card-header bg-primary text-white">
-            Day {{ day }} - {{ plan.date }}
-        </div>
-        <div class="card-body">
-            {% for activity in plan.activities %}
-            <div class="mb-2">
-                <h5>{{ activity.time }} - {{ activity.name }}</h5>
-                <p>{{ activity.description }}</p>
-                <p><strong>Location:</strong> {{ activity.location }}</p>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6 no-print">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">🏔️ YatriBot Smart Itinerary</h1>
+                    <p class="text-blue-100 mt-2">AI-Powered Travel Planning for Nepal</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="printItinerary()" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        <i class="fas fa-print mr-2"></i>Print Itinerary
+                    </button>
+                    <button onclick="shareItinerary()" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        <i class="fas fa-share-alt mr-2"></i>Share
+                    </button>
+                </div>
             </div>
-            {% empty %}
-            <p>No activities planned.</p>
-            {% endfor %}
+        </div>
+    </header>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
+            <p class="mt-4 text-gray-600 font-semibold">Generating your smart itinerary...</p>
+            <p class="text-gray-500">This may take a few moments</p>
         </div>
     </div>
-    {% endfor %}
 
-    <!-- Buttons -->
-    <div class="text-center mt-4">
-        <a href="{% url 'core:edit_itinerary' itinerary.id %}" class="btn btn-warning me-2">Edit Itinerary</a>
-        <a href="{% url 'core:download_itinerary_pdf' itinerary.id %}" class="btn btn-success">Download PDF</a>
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Itinerary Summary -->
+        <div id="itinerarySummary" class="bg-white rounded-xl shadow-lg p-6 mb-8 no-print">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600" id="totalDays">0</div>
+                    <div class="text-gray-600">Total Days</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600" id="totalDestinations">0</div>
+                    <div class="text-gray-600">Destinations</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600" id="estimatedCost">NPR 0</div>
+                    <div class="text-gray-600">Estimated Cost</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-orange-600" id="budgetUtilization">0%</div>
+                    <div class="text-gray-600">Budget Used</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Overview -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8 no-print">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">💰 Budget Overview</h2>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <span class="font-semibold">Total Budget</span>
+                        <span id="totalBudget" class="font-bold">NPR 0</span>
+                    </div>
+                    <div class="budget-meter">
+                        <div id="budgetProgress" class="budget-progress bg-green-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="font-semibold text-blue-700">Accommodation</div>
+                        <div id="accommodationCost" class="text-lg font-bold">NPR 0</div>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="font-semibold text-green-700">Transportation</div>
+                        <div id="transportationCost" class="text-lg font-bold">NPR 0</div>
+                    </div>
+                    <div class="text-center p-3 bg-purple-50 rounded-lg">
+                        <div class="font-semibold text-purple-700">Activities</div>
+                        <div id="activitiesCost" class="text-lg font-bold">NPR 0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Itinerary Timeline -->
+        <div id="itineraryTimeline" class="space-y-6">
+            <!-- Itinerary content will be dynamically generated here -->
+        </div>
+
+        <!-- Travel Tips -->
+        <div id="travelTips" class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg mt-8 no-print">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">💡 Smart Travel Tips</h2>
+            <div id="tipsContent" class="space-y-3">
+                <!-- Tips will be dynamically generated here -->
+            </div>
+        </div>
+
+        <!-- Print Header -->
+        <div class="print-only">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">🏔️ YatriBot Smart Itinerary</h1>
+                <p class="text-gray-600">Generated on <span id="printDate"></span></p>
+            </div>
+        </div>
     </div>
-</div>
+
+    <!-- Action Buttons -->
+    <div class="fixed bottom-6 right-6 space-y-3 no-print">
+        <button onclick="regenerateItinerary()" class="bg-purple-600 text-white p-4 rounded-full shadow-lg hover:bg-purple-700 transition transform hover:scale-110">
+            <i class="fas fa-sync-alt text-xl"></i>
+        </button>
+        <button onclick="downloadPDF()" class="bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition transform hover:scale-110">
+            <i class="fas fa-download text-xl"></i>
+        </button>
+        <button onclick="showBudgetModal()" class="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition transform hover:scale-110">
+            <i class="fas fa-chart-pie text-xl"></i>
+        </button>
+    </div>
+
+    <!-- Budget Modal -->
+    <div id="budgetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 no-print">
+        <div class="bg-white rounded-xl p-6 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold text-gray-800">📊 Budget Breakdown</h3>
+                <button onclick="hideBudgetModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="h-64">
+                <canvas id="budgetChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample itinerary data structure (will be replaced with actual data from Django)
+        let itineraryData = {
+            itinerary_plan: [],
+            total_estimated_cost: 0,
+            recommendations: [],
+            user_budget: 0
+        };
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const itineraryTimeline = document.getElementById('itineraryTimeline');
+        const tipsContent = document.getElementById('tipsContent');
+        const budgetModal = document.getElementById('budgetModal');
+        let budgetChart = null;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            generateItinerary();
+            setPrintDate();
+        });
+
+        // Generate itinerary from backend data
+        async function generateItinerary() {
+            showLoading();
+            
+            try {
+                // Get itinerary data from Django backend
+                const response = await fetch('/api/v1/generate-itinerary/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        // Include user preferences, destinations, etc.
+                        user_id: getUserId(),
+                        // Add other necessary parameters
+                    })
+                });
+
+                if (response.ok) {
+                    itineraryData = await response.json();
+                    renderItinerary();
+                } else {
+                    throw new Error('Failed to generate itinerary');
+                }
+            } catch (error) {
+                console.error('Error generating itinerary:', error);
+                showError('Failed to generate itinerary. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render the itinerary
+        function renderItinerary() {
+            updateSummary();
+            renderTimeline();
+            renderTravelTips();
+            updateBudgetOverview();
+        }
+
+        // Update summary section
+        function updateSummary() {
+            const totalDays = itineraryData.itinerary_plan.reduce((sum, plan) => sum + plan.stay_days, 0);
+            const totalDestinations = itineraryData.itinerary_plan.length;
+            const estimatedCost = itineraryData.total_estimated_cost;
+            const budgetUtilization = itineraryData.user_budget > 0 ? 
+                Math.min(100, Math.round((estimatedCost / itineraryData.user_budget) * 100)) : 0;
+
+            document.getElementById('totalDays').textContent = totalDays;
+            document.getElementById('totalDestinations').textContent = totalDestinations;
+            document.getElementById('estimatedCost').textContent = `NPR ${estimatedCost.toLocaleString()}`;
+            document.getElementById('budgetUtilization').textContent = `${budgetUtilization}%`;
+            document.getElementById('totalBudget').textContent = `NPR ${itineraryData.user_budget.toLocaleString()}`;
+            document.getElementById('budgetProgress').style.width = `${budgetUtilization}%`;
+        }
+
+        // Render itinerary timeline
+        function renderTimeline() {
+            itineraryTimeline.innerHTML = '';
+            
+            itineraryData.itinerary_plan.forEach((plan, index) => {
+                const destinationCard = createDestinationCard(plan, index);
+                itineraryTimeline.appendChild(destinationCard);
+            });
+        }
+
+        // Create destination card
+        function createDestinationCard(plan, index) {
+            const card = document.createElement('div');
+            card.className = 'destination-card bg-white rounded-xl shadow-lg p-6';
+            
+            card.innerHTML = `
+                <div class="flex flex-col md:flex-row md:items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <div class="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                                ${index + 1}
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">${plan.destination.name}</h3>
+                            <span class="ml-3 px-2 py-1 bg-purple-100 text-purple-600 text-sm rounded-full">
+                                ${plan.destination.category}
+                            </span>
+                        </div>
+                        <p class="text-gray-600 mb-2">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            ${plan.arrival_date} - ${plan.departure_date} (${plan.stay_days} days)
+                        </p>
+                        <p class="text-gray-600">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            ${plan.destination.location || 'Nepal'}
+                        </p>
+                    </div>
+                    <div class="mt-4 md:mt-0 md:text-right">
+                        <div class="text-2xl font-bold text-green-600">
+                            NPR ${plan.estimated_cost.toLocaleString()}
+                        </div>
+                        <div class="text-sm text-gray-500">Estimated Cost</div>
+                    </div>
+                </div>
+
+                <!-- Transportation Options -->
+                ${plan.transport_options && plan.transport_options.length > 0 ? `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-bus mr-2"></i>Transportation Options
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ${plan.transport_options.map(transport => `
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="font-semibold">${transport.mode}</div>
+                                <div class="text-sm text-gray-600">
+                                    ${transport.duration} • NPR ${transport.cost}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Recommended Hotels -->
+                ${plan.recommended_hotels && plan.recommended_hotels.length > 0 ? `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-hotel mr-2"></i>Recommended Hotels
+                    </h4>
+                    <div class="space-y-3">
+                        ${plan.recommended_hotels.map(hotel => `
+                            <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                                <div>
+                                    <div class="font-semibold">${hotel.name}</div>
+                                    <div class="text-sm text-gray-600">${hotel.type} • NPR ${hotel.price}/night</div>
+                                </div>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-600 text-sm rounded-full">
+                                    ${hotel.rating || '4.0'} ⭐
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Daily Activities -->
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-calendar-day mr-2"></i>Daily Activities
+                    </h4>
+                    <div class="activity-timeline space-y-4 pl-6">
+                        ${plan.daily_activities.map(day => `
+                            <div class="relative">
+                                <div class="absolute -left-7 mt-2 w-4 h-4 bg-purple-600 rounded-full border-4 border-white"></div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="font-semibold text-purple-600 mb-2">Day ${day.day}</div>
+                                    <ul class="list-disc list-inside space-y-1 text-gray-700">
+                                        ${day.activities.map(activity => `
+                                            <li>${activity}</li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Render travel tips
+        function renderTravelTips() {
+            tipsContent.innerHTML = '';
+            
+            if (itineraryData.recommendations && itineraryData.recommendations.length > 0) {
+                itineraryData.recommendations.forEach(tip => {
+                    const tipElement = document.createElement('div');
+                    tipElement.className = 'flex items-start';
+                    tipElement.innerHTML = `
+                        <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i>
+                        <span class="text-gray-700">${tip}</span>
+                    `;
+                    tipsContent.appendChild(tipElement);
+                });
+            } else {
+                tipsContent.innerHTML = `
+                    <div class="text-gray-600">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        No specific travel tips available for this itinerary.
+                    </div>
+                `;
+            }
+        }
+
+        // Update budget overview
+        function updateBudgetOverview() {
+            // Calculate cost breakdown (this would come from backend in real implementation)
+            const accommodationCost = itineraryData.total_estimated_cost * 0.4;
+            const transportationCost = itineraryData.total_estimated_cost * 0.3;
+            const activitiesCost = itineraryData.total_estimated_cost * 0.3;
+
+            document.getElementById('accommodationCost').textContent = `NPR ${Math.round(accommodationCost).toLocaleString()}`;
+            document.getElementById('transportationCost').textContent = `NPR ${Math.round(transportationCost).toLocaleString()}`;
+            document.getElementById('activitiesCost').textContent = `NPR ${Math.round(activitiesCost).toLocaleString()}`;
+        }
+
+        // Utility functions
+        function showLoading() {
+            loadingScreen.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingScreen.classList.add('hidden');
+        }
+
+        function showError(message) {
+            alert(message); // In production, use a better notification system
+        }
+
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+
+        function getUserId() {
+            // Implement user ID retrieval logic
+            return 'user_' + Date.now();
+        }
+
+        function setPrintDate() {
+            document.getElementById('printDate').textContent = new Date().toLocaleDateString();
+        }
+
+        // Action functions
+        function printItinerary() {
+            window.print();
+        }
+
+        function shareItinerary() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My YatriBot Itinerary',
+                    text: 'Check out my AI-generated travel itinerary for Nepal!',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(window.location.href);
+                alert('Itinerary link copied to clipboard!');
+            }
+        }
+
+        function regenerateItinerary() {
+            if (confirm('Generate a new itinerary with different options?')) {
+                generateItinerary();
+            }
+        }
+
+        function downloadPDF() {
+            // Implement PDF download functionality
+            alert('PDF download feature coming soon!');
+        }
+
+        function showBudgetModal() {
+            createBudgetChart();
+            budgetModal.classList.remove('hidden');
+        }
+
+        function hideBudgetModal() {
+            budgetModal.classList.add('hidden');
+            if (budgetChart) {
+                budgetChart.destroy();
+            }
+        }
+
+        function createBudgetChart() {
+            const ctx = document.getElementById('budgetChart').getContext('2d');
+            
+            if (budgetChart) {
+                budgetChart.destroy();
+            }
+
+            budgetChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Accommodation', 'Transportation', 'Activities', 'Food', 'Miscellaneous'],
+                    datasets: [{
+                        data: [40, 30, 15, 10, 5],
+                        backgroundColor: [
+                            '#3B82F6',
+                            '#10B981',
+                            '#8B5CF6',
+                            '#F59E0B',
+                            '#6B7280'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Close modal when clicking outside
+        budgetModal.addEventListener('click', function(e) {
+            if (e.target === budgetModal) {
+                hideBudgetModal();
+            }
+        });
+    </script>
 </body>
 </html>

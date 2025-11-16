@@ -1,4 +1,73 @@
 From,To,TransportMode,TravelTime_hr,TravelCost_NPR
+From,To,TransportMode,TravelTime_hr,TravelCost_NPR
+Kathmandu,Pokhara,Tourist Bus,6.5,1200
+Pokhara,Kathmandu,Tourist Bus,6.5,1200
+Kathmandu,Pokhara,Flight,0.5,8000
+Pokhara,Kathmandu,Flight,0.5,8000
+Kathmandu,Chitwan,Tourist Bus,5.0,900
+Chitwan,Kathmandu,Tourist Bus,5.0,900
+Pokhara,Chitwan,Local Bus,4.5,700
+Chitwan,Pokhara,Local Bus,4.5,700
+Kathmandu,Lumbini,Tourist Bus,8.0,1500
+Lumbini,Kathmandu,Tourist Bus,8.0,1500
+Pokhara,Lumbini,Local Bus,6.0,1000
+Lumbini,Pokhara,Local Bus,6.0,1000
+Kathmandu,Nagarkot,Taxi,1.5,2500
+Nagarkot,Kathmandu,Taxi,1.5,2500
+Kathmandu,Nagarkot,Local Bus,2.0,150
+Nagarkot,Kathmandu,Local Bus,2.0,150
+Kathmandu,Bhaktapur,Taxi,1.0,1200
+Bhaktapur,Kathmandu,Taxi,1.0,1200
+Kathmandu,Bhaktapur,Local Bus,1.5,50
+Bhaktapur,Kathmandu,Local Bus,1.5,50
+Kathmandu,Patan,Taxi,0.5,600
+Patan,Kathmandu,Taxi,0.5,600
+Pokhara,Sarangkot,Taxi,1.0,1500
+Sarangkot,Pokhara,Taxi,1.0,1500
+Pokhara,Sarangkot,Local Jeep,1.5,300
+Sarangkot,Pokhara,Local Jeep,1.5,300
+Pokhara,Begnas Lake,Taxi,1.0,1200
+Begnas Lake,Pokhara,Taxi,1.0,1200
+Kathmandu,Dhulikhel,Local Bus,1.5,100
+Dhulikhel,Kathmandu,Local Bus,1.5,100
+Kathmandu,Dhulikhel,Taxi,1.0,1800
+Dhulikhel,Kathmandu,Taxi,1.0,1800
+Pokhara,Ghandruk,Local Jeep,3.0,800
+Ghandruk,Pokhara,Local Jeep,3.0,800
+Pokhara,Nayapul,Taxi,1.5,2000
+Nayapul,Pokhara,Taxi,1.5,2000
+Kathmandu,Kakani,Local Bus,2.0,120
+Kakani,Kathmandu,Local Bus,2.0,120
+Kathmandu,Bandipur,Tourist Bus,5.0,800
+Bandipur,Kathmandu,Tourist Bus,5.0,800
+Pokhara,Bandipur,Local Bus,2.0,300
+Bandipur,Pokhara,Local Bus,2.0,300
+Kathmandu,Janakpur,Tourist Bus,8.0,1200
+Janakpur,Kathmandu,Tourist Bus,8.0,1200
+Kathmandu,Ilam,Tourist Bus,12.0,1800
+Ilam,Kathmandu,Tourist Bus,12.0,1800
+Pokhara,Jomsom,Flight,0.5,6000
+Jomsom,Pokhara,Flight,0.5,6000
+Pokhara,Jomsom,Local Jeep,8.0,1500
+Jomsom,Pokhara,Local Jeep,8.0,1500
+Kathmandu,Langtang,Local Jeep,7.0,1200
+Langtang,Kathmandu,Local Jeep,7.0,1200
+Kathmandu,Mustang,Flight,0.8,10000
+Mustang,Kathmandu,Flight,0.8,10000
+Pokhara,Tansen,Local Bus,4.0,500
+Tansen,Pokhara,Local Bus,4.0,500
+Kathmandu,Hetauda,Local Bus,4.0,400
+Hetauda,Kathmandu,Local Bus,4.0,400
+Pokhara,Beni,Local Bus,3.0,400
+Beni,Pokhara,Local Bus,3.0,400
+Kathmandu,Rara Lake,Flight,1.5,12000
+Rara Lake,Kathmandu,Flight,1.5,12000
+Kathmandu,Biratnagar,Flight,1.0,7000
+Biratnagar,Kathmandu,Flight,1.0,7000
+Pokhara,Besisahar,Local Bus,3.0,400
+Besisahar,Pokhara,Local Bus,3.0,400
+Kathmandu,Besisahar,Local Bus,5.0,600
+Besisahar,Kathmandu,Local Bus,5.0,600
 Tila River Valley,Koshi Barrage,Taxi,5.6,2885
 Tila River Valley,Chhimkeshwori Hill,Bus,8.3,2469
 Tila River Valley,Arun Valley,Taxi,5.6,3029
