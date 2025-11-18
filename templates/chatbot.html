@@ -1,406 +1,66 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YatriBot - Nepal Travel Assistant</title>
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token }}">
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+    <title>YatriBot Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #chatbox { border: 1px solid #ccc; padding: 10px; width: 400px; height: 300px; overflow-y: scroll; }
+        .msg { margin: 5px 0; }
+        .user { font-weight: bold; }
+        .bot { color: green; }
+    </style>
 </head>
-<body class="bg-gray-50">
-    <!-- CSRF Token for AJAX requests -->
-    {% csrf_token %}
-    
-    <!-- Back to Home Button -->
-    <div class="back-home">
-        <a href="{% url 'core:index' %}" class="back-btn">
-            <i class="fas fa-arrow-left"></i>
-            Back to Home
-        </a>
-    </div>
-
-    <div class="container mx-auto px-4">
-        <div class="chat-container">
-            <!-- Header -->
-            <div class="chat-header">
-                <h1 class="main-header">🏔️ YatriBot</h1>
-                <p class="sub-header">Your Intelligent Nepal Travel Assistant</p>
-            </div>
-
-            <!-- Chat Messages - UNCOMMENTED -->
-            <div class="chat-messages" id="chatMessages">
-                <div class="bot-message">
-                    <div class="message-content">
-                        <strong>YatriBot</strong>
-                        👋 Namaste! I'm YatriBot, your Nepal travel assistant! I can help you with:
-                        <br><br>
-                        🏨 <strong>Hotel bookings</strong> across Nepal<br>
-                        🌤️ <strong>Weather information</strong> for any location<br>
-                        🗺️ <strong>Travel routes</strong> and transport options<br>
-                        💰 <strong>Budget planning</strong> for your trips<br>
-                        🌟 <strong>Travel recommendations</strong> based on your preferences
-                        <br><br>
-                        How can I assist you today?
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <h3>🚀 Quick Actions</h3>
-                <div class="action-buttons">
-                    <button class="action-btn" data-message="Find hotels in Kathmandu">
-                        🏨 Hotels in Kathmandu
-                    </button>
-                    <button class="action-btn" data-message="Weather in Pokhara">
-                        🌤️ Weather in Pokhara
-                    </button>
-                    <button class="action-btn" data-message="Travel from Chitwan to Kathmandu">
-                        🗺️ Chitwan to Kathmandu
-                    </button>
-                    <button class="action-btn" data-message="Recommend adventure places in Pokhara">
-                        🌟 Travel Recommendations
-                    </button>
-                </div>
-            </div>
-
-            <!-- Chat Input -->
-            <div class="chat-input-container">
-                <div class="input-group">
-                    <input type="text" id="userInput" 
-                           placeholder="Ask about hotels, weather, travel routes, or recommendations..." 
-                           class="chat-input" autocomplete="off">
-                    <button id="sendButton" class="send-btn">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Loading Spinner -->
-            <div id="loadingSpinner" class="loading-spinner" style="display: none;">
-                <div class="spinner"></div>
-                <span>YatriBot is thinking...</span>
-            </div>
-        </div>
-    </div>
+<body>
+    <h2>Chat with YatriBot 🤖</h2>
+    <div id="chatbox"></div>
+    <input type="text" id="message" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
 
     <script>
-        class ChatBot {
-            constructor() {
-                this.chatMessages = document.getElementById('chatMessages');
-                this.userInput = document.getElementById('userInput');
-                this.sendButton = document.getElementById('sendButton');
-                this.loadingSpinner = document.getElementById('loadingSpinner');
-                this.isLoading = false;
-                
-                // Check if elements exist
-                if (!this.chatMessages) {
-                    console.error('❌ chatMessages element not found! Creating empty container...');
-                    // Create empty chat messages container
-                    this.createChatMessagesContainer();
-                }
-                if (!this.userInput) {
-                    console.error('❌ userInput element not found!');
-                    return;
-                }
-                if (!this.sendButton) {
-                    console.error('❌ sendButton element not found!');
-                    return;
-                }
-                
-                this.initEventListeners();
-                this.focusInput();
-                
-                console.log('🚀 ChatBot initialized successfully');
-                console.log('📝 CSRF Token:', this.getCsrfToken());
-            }
-            
-            createChatMessagesContainer() {
-                // Create and insert the chat messages container
-                const chatContainer = document.querySelector('.chat-container');
-                if (chatContainer) {
-                    const chatMessagesDiv = document.createElement('div');
-                    chatMessagesDiv.className = 'chat-messages';
-                    chatMessagesDiv.id = 'chatMessages';
-                    
-                    // Insert before quick actions
-                    const quickActions = document.querySelector('.quick-actions');
-                    if (quickActions) {
-                        chatContainer.insertBefore(chatMessagesDiv, quickActions);
-                        this.chatMessages = chatMessagesDiv;
-                        console.log('✅ Created chatMessages container');
-                    }
-                }
-            }
-            
-            initEventListeners() {
-                // Send button click
-                this.sendButton.addEventListener('click', () => this.sendMessage());
-                
-                // Enter key in input
-                this.userInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !this.isLoading) {
-                        this.sendMessage();
-                    }
-                });
-                
-                // Quick action buttons
-                document.querySelectorAll('.action-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const message = e.target.getAttribute('data-message');
-                        this.userInput.value = message;
-                        this.sendMessage();
-                    });
-                });
+        async function sendMessage() {
+            const input = document.getElementById('message');
+            const message = input.value;
+            if (!message) return;
 
-                console.log('✅ Event listeners initialized');
-            }
-            
-            focusInput() {
-                setTimeout(() => {
-                    if (this.userInput) {
-                        this.userInput.focus();
-                        console.log('🎯 Input field focused');
-                    }
-                }, 500);
-            }
-            
-            async sendMessage() {
-                const message = this.userInput.value.trim();
-                
-                if (!message || this.isLoading) {
-                    console.log('⚠️ Message empty or loading, skipping...');
-                    return;
-                }
-                
-                console.log('📤 Sending message:', message);
-                
-                // Add user message to chat
-                this.addMessage(message, 'user');
-                this.userInput.value = '';
-                this.setLoading(true);
-                
-                try {
-                    const response = await this.getBotResponse(message);
-                    console.log('✅ API Response received:', response);
-                    this.addMessage(response.response, 'bot', response.intent);
-                } catch (error) {
-                    console.error('❌ ChatBot Error:', error);
-                    this.addMessage('❌ Sorry, something went wrong. Please try again.', 'bot', 'error');
-                } finally {
-                    this.setLoading(false);
-                }
-            }
-            
-            async getBotResponse(message) {
-                console.log('🔍 Attempting to fetch from API...');
-                
-                // Use your actual Django URLs - try the exact endpoint from your urls.py
-                const endpoints = [
-                    '/chat/',  // Your actual endpoint from urls.py
-                    'http://localhost:8000/chat/',
-                    'http://127.0.0.1:8000/chat/',
-                    '/api/chat/'
-                ];
-                
-                for (const endpoint of endpoints) {
-                    try {
-                        console.log(`🔄 Trying endpoint: ${endpoint}`);
-                        
-                        const csrfToken = this.getCsrfToken();
-                        console.log(`🔐 CSRF Token: ${csrfToken ? 'Found' : 'Not found'}`);
-                        
-                        const response = await fetch(endpoint, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': csrfToken || '',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({ 
-                                message: message,
-                                user_id: 'web-user-' + Date.now()
-                            })
-                        });
-                        
-                        console.log(`📡 Response status for ${endpoint}:`, response.status);
-                        console.log(`📡 Response OK:`, response.ok);
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            console.log(`✅ Success with endpoint: ${endpoint}`, data);
-                            return data;
-                        } else {
-                            const errorText = await response.text();
-                            console.error(`❌ Endpoint ${endpoint} failed:`, response.status, errorText);
-                            
-                            // If it's a 404, try next endpoint
-                            if (response.status === 404) {
-                                continue;
-                            }
-                            
-                            throw new Error(`HTTP ${response.status}: ${errorText}`);
-                        }
-                    } catch (error) {
-                        console.error(`❌ Endpoint ${endpoint} error:`, error);
-                        // Continue to next endpoint
-                    }
-                }
-                
-                throw new Error('All API endpoints failed. Please check your Django server is running.');
-            }
-            
-            addMessage(content, sender, intent = null) {
-                if (!this.chatMessages) {
-                    console.error('❌ Cannot add message: chatMessages element not found');
-                    return;
-                }
-                
-                const messageDiv = document.createElement('div');
-                
-                // Set base class
-                messageDiv.className = `${sender}-message`;
-                
-                // Add special classes for error/success messages
-                if (content.includes('❌')) {
-                    messageDiv.classList.add('error-message');
-                } else if (content.includes('✅')) {
-                    messageDiv.classList.add('success-message');
-                }
-                
-                let messageContent = `<div class="message-content">`;
-                
-                if (sender === 'user') {
-                    messageContent += `<strong>You</strong> ${this.escapeHtml(content)}`;
-                } else {
-                    // Convert markdown-style formatting to HTML
-                    const formattedContent = content
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/\n/g, '<br>');
-                    
-                    messageContent += `<strong>YatriBot</strong> ${formattedContent}`;
-                    if (intent && intent !== 'greeting' && intent !== 'farewell') {
-                        messageContent += `<span class="intent-badge">${intent}</span>`;
-                    }
-                }
-                
-                messageContent += `</div>`;
-                messageDiv.innerHTML = messageContent;
-                
-                this.chatMessages.appendChild(messageDiv);
-                this.scrollToBottom();
-                
-                console.log(`💬 Added ${sender} message:`, content.substring(0, 50) + '...');
-            }
-            
-            setLoading(loading) {
-                this.isLoading = loading;
-                if (loading) {
-                    this.loadingSpinner.style.display = 'flex';
-                    this.sendButton.disabled = true;
-                    this.userInput.disabled = true;
-                    this.sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                    console.log('⏳ Loading started...');
-                } else {
-                    this.loadingSpinner.style.display = 'none';
-                    this.sendButton.disabled = false;
-                    this.userInput.disabled = false;
-                    this.sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-                    this.focusInput();
-                    console.log('✅ Loading finished');
-                }
-            }
-            
-            scrollToBottom() {
-                setTimeout(() => {
-                    if (this.chatMessages) {
-                        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-                    }
-                }, 100);
-            }
-            
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-            
-            getCsrfToken() {
-                // First try to get from meta tag
-                const metaToken = document.querySelector('meta[name="csrf-token"]');
-                if (metaToken) {
-                    return metaToken.getAttribute('content');
-                }
-                
-                // Then try cookies
-                const name = 'csrftoken';
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
+            appendMessage('You', message, 'user');
+            input.value = '';
+
+            const response = await fetch('/chatbot/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ message: message })
+            });
+
+            const data = await response.json();
+            appendMessage('YatriBot', data.response, 'bot');
         }
 
-        // Initialize chatbot when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 DOM loaded, initializing ChatBot...');
-            try {
-                new ChatBot();
-                console.log('🎉 ChatBot initialized successfully!');
-            } catch (error) {
-                console.error('💥 Failed to initialize ChatBot:', error);
-            }
-        });
+        function appendMessage(sender, text, cls) {
+            const div = document.getElementById('chatbox');
+            const msg = document.createElement('div');
+            msg.className = `msg ${cls}`;
+            msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            div.appendChild(msg);
+            div.scrollTop = div.scrollHeight;
+        }
 
-        // Test function to check if endpoints are working
-        window.testEndpoints = async function() {
-            console.log('🧪 Testing all endpoints...');
-            
-            const testEndpoints = [
-                '/chat/',
-                '/health/',
-                'http://localhost:8000/chat/',
-                'http://127.0.0.1:8000/chat/'
-            ];
-            
-            for (const endpoint of testEndpoints) {
-                try {
-                    console.log(`🔍 Testing: ${endpoint}`);
-                    const response = await fetch(endpoint, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    });
-                    console.log(`📊 ${endpoint}: Status ${response.status}, OK: ${response.ok}`);
-                } catch (error) {
-                    console.error(`❌ ${endpoint}:`, error.message);
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
-        };
-
-        // Run tests on load
-        document.addEventListener('DOMContentLoaded', async () => {
-            setTimeout(() => {
-                console.log('🚀 Running initial tests...');
-                window.testEndpoints();
-            }, 2000);
-        });
+            return cookieValue;
+        }
     </script>
 </body>
 </html>
