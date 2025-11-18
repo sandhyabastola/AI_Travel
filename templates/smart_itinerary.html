@@ -55,7 +55,7 @@
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold">🏔️ YatriBot Smart Itinerary</h1>
+                    <h1 class="text-3xl font-bold">Your Itinerary</h1>
                     <p class="text-blue-100 mt-2">AI-Powered Travel Planning for Nepal</p>
                 </div>
                 <div class="flex space-x-4">
@@ -184,348 +184,467 @@
     </div>
 
     <script>
-        // Sample itinerary data structure (will be replaced with actual data from Django)
-        let itineraryData = {
-            itinerary_plan: [],
-            total_estimated_cost: 0,
-            recommendations: [],
-            user_budget: 0
-        };
+    // Sample itinerary data structure (working example)
+    let itineraryData = {
+        itinerary_plan: [
+            {
+                destination: {
+                    name: "Kathmandu",
+                    category: "Cultural",
+                    location: "Kathmandu Valley"
+                },
+                arrival_date: "2024-01-15",
+                departure_date: "2024-01-18",
+                stay_days: 3,
+                estimated_cost: 15000,
+                transport_options: [
+                    { mode: "Flight", duration: "30 min", cost: 5000 },
+                    { mode: "Taxi", duration: "20 min", cost: 800 }
+                ],
+                recommended_hotels: [
+                    { name: "Yak & Yeti Hotel", type: "Luxury", price: 8000, rating: "4.5" },
+                    { name: "Hotel Annapurna", type: "Business", price: 5000, rating: "4.2" }
+                ],
+                daily_activities: [
+                    {
+                        day: 1,
+                        activities: [
+                            "Visit Swayambhunath Stupa (Monkey Temple)",
+                            "Explore Thamel market",
+                            "Evening at Garden of Dreams"
+                        ]
+                    },
+                    {
+                        day: 2,
+                        activities: [
+                            "Pashupatinath Temple tour",
+                            "Boudhanath Stupa visit",
+                            "Traditional Nepali dinner"
+                        ]
+                    }
+                ]
+            },
+            {
+                destination: {
+                    name: "Pokhara",
+                    category: "Adventure",
+                    location: "Gandaki Province"
+                },
+                arrival_date: "2024-01-18",
+                departure_date: "2024-01-21",
+                stay_days: 3,
+                estimated_cost: 12000,
+                transport_options: [
+                    { mode: "Tourist Bus", duration: "6-7 hours", cost: 1200 },
+                    { mode: "Flight", duration: "25 min", cost: 8000 }
+                ],
+                recommended_hotels: [
+                    { name: "Temple Tree Resort", type: "Resort", price: 6000, rating: "4.3" },
+                    { name: "Hotel Barahi", type: "Luxury", price: 7000, rating: "4.4" }
+                ],
+                daily_activities: [
+                    {
+                        day: 1,
+                        activities: [
+                            "Boating on Phewa Lake",
+                            "Visit World Peace Pagoda",
+                            "Explore Lakeside area"
+                        ]
+                    },
+                    {
+                        day: 2,
+                        activities: [
+                            "Sarangkot sunrise view",
+                            "Paragliding adventure",
+                            "Davis Falls visit"
+                        ]
+                    }
+                ]
+            }
+        ],
+        total_estimated_cost: 27000,
+        recommendations: [
+            "Carry cash as many places don't accept cards",
+            "Book paragliding in Pokhara in advance",
+            "Carry warm clothes for mountain views",
+            "Try local momos and dal bhat"
+        ],
+        user_budget: 30000
+    };
 
-        // DOM Elements
-        const loadingScreen = document.getElementById('loadingScreen');
-        const itineraryTimeline = document.getElementById('itineraryTimeline');
-        const tipsContent = document.getElementById('tipsContent');
-        const budgetModal = document.getElementById('budgetModal');
-        let budgetChart = null;
+    // DOM Elements
+    const loadingScreen = document.getElementById('loadingScreen');
+    const itineraryTimeline = document.getElementById('itineraryTimeline');
+    const tipsContent = document.getElementById('tipsContent');
+    const budgetModal = document.getElementById('budgetModal');
+    let budgetChart = null;
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Simulate loading delay
+        setTimeout(() => {
             generateItinerary();
             setPrintDate();
-        });
+        }, 1500);
+    });
 
-        // Generate itinerary from backend data
-        async function generateItinerary() {
-            showLoading();
+    // Generate itinerary (using sample data for now)
+    async function generateItinerary() {
+        showLoading();
+        
+        try {
+            // For now, use sample data
+            // In production, uncomment the API call below
             
-            try {
-                // Get itinerary data from Django backend
-                const response = await fetch('/api/v1/generate-itinerary/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCSRFToken()
-                    },
-                    body: JSON.stringify({
-                        // Include user preferences, destinations, etc.
-                        user_id: getUserId(),
-                        // Add other necessary parameters
-                    })
-                });
-
-                if (response.ok) {
-                    itineraryData = await response.json();
-                    renderItinerary();
-                } else {
-                    throw new Error('Failed to generate itinerary');
-                }
-            } catch (error) {
-                console.error('Error generating itinerary:', error);
-                showError('Failed to generate itinerary. Please try again.');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Render the itinerary
-        function renderItinerary() {
-            updateSummary();
-            renderTimeline();
-            renderTravelTips();
-            updateBudgetOverview();
-        }
-
-        // Update summary section
-        function updateSummary() {
-            const totalDays = itineraryData.itinerary_plan.reduce((sum, plan) => sum + plan.stay_days, 0);
-            const totalDestinations = itineraryData.itinerary_plan.length;
-            const estimatedCost = itineraryData.total_estimated_cost;
-            const budgetUtilization = itineraryData.user_budget > 0 ? 
-                Math.min(100, Math.round((estimatedCost / itineraryData.user_budget) * 100)) : 0;
-
-            document.getElementById('totalDays').textContent = totalDays;
-            document.getElementById('totalDestinations').textContent = totalDestinations;
-            document.getElementById('estimatedCost').textContent = `NPR ${estimatedCost.toLocaleString()}`;
-            document.getElementById('budgetUtilization').textContent = `${budgetUtilization}%`;
-            document.getElementById('totalBudget').textContent = `NPR ${itineraryData.user_budget.toLocaleString()}`;
-            document.getElementById('budgetProgress').style.width = `${budgetUtilization}%`;
-        }
-
-        // Render itinerary timeline
-        function renderTimeline() {
-            itineraryTimeline.innerHTML = '';
-            
-            itineraryData.itinerary_plan.forEach((plan, index) => {
-                const destinationCard = createDestinationCard(plan, index);
-                itineraryTimeline.appendChild(destinationCard);
+            /*
+            const response = await fetch('/api/v1/generate-itinerary/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    destinations: ['Kathmandu', 'Pokhara'],
+                    budget: 30000,
+                    duration: 6,
+                    travel_style: 'mixed'
+                })
             });
-        }
 
-        // Create destination card
-        function createDestinationCard(plan, index) {
-            const card = document.createElement('div');
-            card.className = 'destination-card bg-white rounded-xl shadow-lg p-6';
+            if (response.ok) {
+                itineraryData = await response.json();
+            } else {
+                throw new Error('Failed to generate itinerary');
+            }
+            */
             
-            card.innerHTML = `
-                <div class="flex flex-col md:flex-row md:items-start justify-between mb-4">
-                    <div class="flex-1">
-                        <div class="flex items-center mb-2">
-                            <div class="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
-                                ${index + 1}
+            // Use sample data for demonstration
+            renderItinerary();
+            
+        } catch (error) {
+            console.error('Error generating itinerary:', error);
+            showError('Failed to generate itinerary. Using sample data instead.');
+            renderItinerary(); // Fallback to sample data
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Render the itinerary
+    function renderItinerary() {
+        updateSummary();
+        renderTimeline();
+        renderTravelTips();
+        updateBudgetOverview();
+    }
+
+    // Update summary section
+    function updateSummary() {
+        const totalDays = itineraryData.itinerary_plan.reduce((sum, plan) => sum + plan.stay_days, 0);
+        const totalDestinations = itineraryData.itinerary_plan.length;
+        const estimatedCost = itineraryData.total_estimated_cost;
+        const budgetUtilization = itineraryData.user_budget > 0 ? 
+            Math.min(100, Math.round((estimatedCost / itineraryData.user_budget) * 100)) : 0;
+
+        document.getElementById('totalDays').textContent = totalDays;
+        document.getElementById('totalDestinations').textContent = totalDestinations;
+        document.getElementById('estimatedCost').textContent = `NPR ${estimatedCost.toLocaleString()}`;
+        document.getElementById('budgetUtilization').textContent = `${budgetUtilization}%`;
+        document.getElementById('totalBudget').textContent = `NPR ${itineraryData.user_budget.toLocaleString()}`;
+        document.getElementById('budgetProgress').style.width = `${budgetUtilization}%`;
+    }
+
+    // Render itinerary timeline
+    function renderTimeline() {
+        itineraryTimeline.innerHTML = '';
+        
+        itineraryData.itinerary_plan.forEach((plan, index) => {
+            const destinationCard = createDestinationCard(plan, index);
+            itineraryTimeline.appendChild(destinationCard);
+        });
+    }
+
+    // Create destination card
+    function createDestinationCard(plan, index) {
+        const card = document.createElement('div');
+        card.className = 'destination-card bg-white rounded-xl shadow-lg p-6 mb-6';
+        
+        // Ensure all required properties exist
+        const transportOptions = plan.transport_options || [];
+        const recommendedHotels = plan.recommended_hotels || [];
+        const dailyActivities = plan.daily_activities || [];
+        
+        card.innerHTML = `
+            <div class="flex flex-col md:flex-row md:items-start justify-between mb-4">
+                <div class="flex-1">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                            ${index + 1}
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800">${plan.destination.name}</h3>
+                        <span class="ml-3 px-2 py-1 bg-purple-100 text-purple-600 text-sm rounded-full">
+                            ${plan.destination.category}
+                        </span>
+                    </div>
+                    <p class="text-gray-600 mb-2">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        ${plan.arrival_date} - ${plan.departure_date} (${plan.stay_days} days)
+                    </p>
+                    <p class="text-gray-600">
+                        <i class="fas fa-map-marker-alt mr-2"></i>
+                        ${plan.destination.location}
+                    </p>
+                </div>
+                <div class="mt-4 md:mt-0 md:text-right">
+                    <div class="text-2xl font-bold text-green-600">
+                        NPR ${plan.estimated_cost.toLocaleString()}
+                    </div>
+                    <div class="text-sm text-gray-500">Estimated Cost</div>
+                </div>
+            </div>
+
+            <!-- Transportation Options -->
+            ${transportOptions.length > 0 ? `
+            <div class="mb-6">
+                <h4 class="font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-bus mr-2"></i>Transportation Options
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${transportOptions.map(transport => `
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <div class="font-semibold">${transport.mode}</div>
+                            <div class="text-sm text-gray-600">
+                                ${transport.duration} • NPR ${transport.cost}
                             </div>
-                            <h3 class="text-xl font-bold text-gray-800">${plan.destination.name}</h3>
-                            <span class="ml-3 px-2 py-1 bg-purple-100 text-purple-600 text-sm rounded-full">
-                                ${plan.destination.category}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Recommended Hotels -->
+            ${recommendedHotels.length > 0 ? `
+            <div class="mb-6">
+                <h4 class="font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-hotel mr-2"></i>Recommended Hotels
+                </h4>
+                <div class="space-y-3">
+                    ${recommendedHotels.map(hotel => `
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                            <div>
+                                <div class="font-semibold">${hotel.name}</div>
+                                <div class="text-sm text-gray-600">${hotel.type} • NPR ${hotel.price}/night</div>
+                            </div>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-600 text-sm rounded-full">
+                                ${hotel.rating} ⭐
                             </span>
                         </div>
-                        <p class="text-gray-600 mb-2">
-                            <i class="fas fa-calendar-alt mr-2"></i>
-                            ${plan.arrival_date} - ${plan.departure_date} (${plan.stay_days} days)
-                        </p>
-                        <p class="text-gray-600">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            ${plan.destination.location || 'Nepal'}
-                        </p>
-                    </div>
-                    <div class="mt-4 md:mt-0 md:text-right">
-                        <div class="text-2xl font-bold text-green-600">
-                            NPR ${plan.estimated_cost.toLocaleString()}
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Daily Activities -->
+            ${dailyActivities.length > 0 ? `
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-calendar-day mr-2"></i>Daily Activities
+                </h4>
+                <div class="activity-timeline space-y-4 pl-6">
+                    ${dailyActivities.map(day => `
+                        <div class="relative">
+                            <div class="absolute -left-7 mt-2 w-4 h-4 bg-purple-600 rounded-full border-4 border-white"></div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="font-semibold text-purple-600 mb-2">Day ${day.day}</div>
+                                <ul class="list-disc list-inside space-y-1 text-gray-700">
+                                    ${day.activities.map(activity => `
+                                        <li>${activity}</li>
+                                    `).join('')}
+                                </ul>
+                            </div>
                         </div>
-                        <div class="text-sm text-gray-500">Estimated Cost</div>
-                    </div>
+                    `).join('')}
                 </div>
+            </div>
+            ` : '<p class="text-gray-500 text-center py-4">No activities planned yet.</p>'}
+        `;
+        
+        return card;
+    }
 
-                <!-- Transportation Options -->
-                ${plan.transport_options && plan.transport_options.length > 0 ? `
-                <div class="mb-6">
-                    <h4 class="font-semibold text-gray-700 mb-3">
-                        <i class="fas fa-bus mr-2"></i>Transportation Options
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        ${plan.transport_options.map(transport => `
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <div class="font-semibold">${transport.mode}</div>
-                                <div class="text-sm text-gray-600">
-                                    ${transport.duration} • NPR ${transport.cost}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-
-                <!-- Recommended Hotels -->
-                ${plan.recommended_hotels && plan.recommended_hotels.length > 0 ? `
-                <div class="mb-6">
-                    <h4 class="font-semibold text-gray-700 mb-3">
-                        <i class="fas fa-hotel mr-2"></i>Recommended Hotels
-                    </h4>
-                    <div class="space-y-3">
-                        ${plan.recommended_hotels.map(hotel => `
-                            <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                                <div>
-                                    <div class="font-semibold">${hotel.name}</div>
-                                    <div class="text-sm text-gray-600">${hotel.type} • NPR ${hotel.price}/night</div>
-                                </div>
-                                <span class="px-2 py-1 bg-blue-100 text-blue-600 text-sm rounded-full">
-                                    ${hotel.rating || '4.0'} ⭐
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-
-                <!-- Daily Activities -->
-                <div>
-                    <h4 class="font-semibold text-gray-700 mb-3">
-                        <i class="fas fa-calendar-day mr-2"></i>Daily Activities
-                    </h4>
-                    <div class="activity-timeline space-y-4 pl-6">
-                        ${plan.daily_activities.map(day => `
-                            <div class="relative">
-                                <div class="absolute -left-7 mt-2 w-4 h-4 bg-purple-600 rounded-full border-4 border-white"></div>
-                                <div class="bg-gray-50 p-4 rounded-lg">
-                                    <div class="font-semibold text-purple-600 mb-2">Day ${day.day}</div>
-                                    <ul class="list-disc list-inside space-y-1 text-gray-700">
-                                        ${day.activities.map(activity => `
-                                            <li>${activity}</li>
-                                        `).join('')}
-                                    </ul>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
+    // Render travel tips
+    function renderTravelTips() {
+        tipsContent.innerHTML = '';
+        
+        if (itineraryData.recommendations && itineraryData.recommendations.length > 0) {
+            itineraryData.recommendations.forEach(tip => {
+                const tipElement = document.createElement('div');
+                tipElement.className = 'flex items-start mb-3';
+                tipElement.innerHTML = `
+                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i>
+                    <span class="text-gray-700">${tip}</span>
+                `;
+                tipsContent.appendChild(tipElement);
+            });
+        } else {
+            tipsContent.innerHTML = `
+                <div class="text-gray-600">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    No specific travel tips available for this itinerary.
                 </div>
             `;
-            
-            return card;
         }
+    }
 
-        // Render travel tips
-        function renderTravelTips() {
-            tipsContent.innerHTML = '';
-            
-            if (itineraryData.recommendations && itineraryData.recommendations.length > 0) {
-                itineraryData.recommendations.forEach(tip => {
-                    const tipElement = document.createElement('div');
-                    tipElement.className = 'flex items-start';
-                    tipElement.innerHTML = `
-                        <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-3"></i>
-                        <span class="text-gray-700">${tip}</span>
-                    `;
-                    tipsContent.appendChild(tipElement);
-                });
-            } else {
-                tipsContent.innerHTML = `
-                    <div class="text-gray-600">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        No specific travel tips available for this itinerary.
-                    </div>
-                `;
+    // Update budget overview
+    function updateBudgetOverview() {
+        const estimatedCost = itineraryData.total_estimated_cost;
+        const accommodationCost = Math.round(estimatedCost * 0.4);
+        const transportationCost = Math.round(estimatedCost * 0.3);
+        const activitiesCost = Math.round(estimatedCost * 0.3);
+
+        document.getElementById('accommodationCost').textContent = `NPR ${accommodationCost.toLocaleString()}`;
+        document.getElementById('transportationCost').textContent = `NPR ${transportationCost.toLocaleString()}`;
+        document.getElementById('activitiesCost').textContent = `NPR ${activitiesCost.toLocaleString()}`;
+    }
+
+    // Utility functions
+    function showLoading() {
+        loadingScreen.classList.remove('hidden');
+    }
+
+    function hideLoading() {
+        loadingScreen.classList.add('hidden');
+    }
+
+    function showError(message) {
+        // Create a nice error notification
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50';
+        errorDiv.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(errorDiv);
+        
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
+    }
+
+    function getCSRFToken() {
+        // Try to get CSRF token from cookie
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
+        return cookieValue;
+    }
 
-        // Update budget overview
-        function updateBudgetOverview() {
-            // Calculate cost breakdown (this would come from backend in real implementation)
-            const accommodationCost = itineraryData.total_estimated_cost * 0.4;
-            const transportationCost = itineraryData.total_estimated_cost * 0.3;
-            const activitiesCost = itineraryData.total_estimated_cost * 0.3;
+    function setPrintDate() {
+        document.getElementById('printDate').textContent = new Date().toLocaleDateString();
+    }
 
-            document.getElementById('accommodationCost').textContent = `NPR ${Math.round(accommodationCost).toLocaleString()}`;
-            document.getElementById('transportationCost').textContent = `NPR ${Math.round(transportationCost).toLocaleString()}`;
-            document.getElementById('activitiesCost').textContent = `NPR ${Math.round(activitiesCost).toLocaleString()}`;
+    // Action functions
+    function printItinerary() {
+        window.print();
+    }
+
+    function shareItinerary() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'My YatriBot Itinerary',
+                text: 'Check out my AI-generated travel itinerary for Nepal!',
+                url: window.location.href
+            });
+        } else {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                showError('Itinerary link copied to clipboard!');
+            });
+        }
+    }
+
+    function regenerateItinerary() {
+        if (confirm('Generate a new itinerary with different options?')) {
+            generateItinerary();
+        }
+    }
+
+    function downloadPDF() {
+        showError('PDF download feature coming soon!');
+    }
+
+    function showBudgetModal() {
+        createBudgetChart();
+        budgetModal.classList.remove('hidden');
+    }
+
+    function hideBudgetModal() {
+        budgetModal.classList.add('hidden');
+        if (budgetChart) {
+            budgetChart.destroy();
+        }
+    }
+
+    function createBudgetChart() {
+        const ctx = document.getElementById('budgetChart').getContext('2d');
+        
+        if (budgetChart) {
+            budgetChart.destroy();
         }
 
-        // Utility functions
-        function showLoading() {
-            loadingScreen.classList.remove('hidden');
-        }
-
-        function hideLoading() {
-            loadingScreen.classList.add('hidden');
-        }
-
-        function showError(message) {
-            alert(message); // In production, use a better notification system
-        }
-
-        function getCSRFToken() {
-            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-        }
-
-        function getUserId() {
-            // Implement user ID retrieval logic
-            return 'user_' + Date.now();
-        }
-
-        function setPrintDate() {
-            document.getElementById('printDate').textContent = new Date().toLocaleDateString();
-        }
-
-        // Action functions
-        function printItinerary() {
-            window.print();
-        }
-
-        function shareItinerary() {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'My YatriBot Itinerary',
-                    text: 'Check out my AI-generated travel itinerary for Nepal!',
-                    url: window.location.href
-                });
-            } else {
-                // Fallback: copy to clipboard
-                navigator.clipboard.writeText(window.location.href);
-                alert('Itinerary link copied to clipboard!');
-            }
-        }
-
-        function regenerateItinerary() {
-            if (confirm('Generate a new itinerary with different options?')) {
-                generateItinerary();
-            }
-        }
-
-        function downloadPDF() {
-            // Implement PDF download functionality
-            alert('PDF download feature coming soon!');
-        }
-
-        function showBudgetModal() {
-            createBudgetChart();
-            budgetModal.classList.remove('hidden');
-        }
-
-        function hideBudgetModal() {
-            budgetModal.classList.add('hidden');
-            if (budgetChart) {
-                budgetChart.destroy();
-            }
-        }
-
-        function createBudgetChart() {
-            const ctx = document.getElementById('budgetChart').getContext('2d');
-            
-            if (budgetChart) {
-                budgetChart.destroy();
-            }
-
-            budgetChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Accommodation', 'Transportation', 'Activities', 'Food', 'Miscellaneous'],
-                    datasets: [{
-                        data: [40, 30, 15, 10, 5],
-                        backgroundColor: [
-                            '#3B82F6',
-                            '#10B981',
-                            '#8B5CF6',
-                            '#F59E0B',
-                            '#6B7280'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#FFFFFF'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.label}: ${context.raw}%`;
-                                }
+        budgetChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Accommodation', 'Transportation', 'Activities', 'Food', 'Miscellaneous'],
+                datasets: [{
+                    data: [40, 30, 15, 10, 5],
+                    backgroundColor: [
+                        '#3B82F6',
+                        '#10B981',
+                        '#8B5CF6',
+                        '#F59E0B',
+                        '#6B7280'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.raw}%`;
                             }
                         }
                     }
                 }
-            });
-        }
-
-        // Close modal when clicking outside
-        budgetModal.addEventListener('click', function(e) {
-            if (e.target === budgetModal) {
-                hideBudgetModal();
             }
         });
-    </script>
-</body>
+    }
+
+    // Close modal when clicking outside
+    budgetModal.addEventListener('click', function(e) {
+        if (e.target === budgetModal) {
+            hideBudgetModal();
+        }
+    });
+</script>
+
 </html>
